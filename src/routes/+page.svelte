@@ -89,6 +89,42 @@
       subject: "다리 위 가로등이 하나씩 켜졌어요",
       body: "사연을 보낸 뒤 집까지 가는 길이 덜 무서웠습니다. 이 도시는 아직 깨어 있네요.",
       mood: "안도"
+    },
+    {
+      id: "rooftop-garden-dalsoo",
+      packId: "rooftop-garden",
+      order: 1,
+      author: "옥상 관리인 달수",
+      subject: "물탱크 옆 작은 화분을 맡았습니다",
+      body: "퇴근길마다 한 컵씩 물을 줍니다. 방송에서 비 소리가 나오면 잎이 조금 더 곧게 서는 것 같습니다.",
+      mood: "잔잔함"
+    },
+    {
+      id: "rooftop-garden-mira",
+      packId: "rooftop-garden",
+      order: 2,
+      author: "새벽 배송원 미라",
+      subject: "옥상 난간에 매달린 리본을 봤어요",
+      body: "매일 다른 색으로 바뀌는 리본입니다. 오늘은 노란색이었고, 이상하게 피곤함이 덜했습니다.",
+      mood: "위로"
+    },
+    {
+      id: "rooftop-garden-seoho",
+      packId: "rooftop-garden",
+      order: 3,
+      author: "라디오 수리공 서호",
+      subject: "낡은 스피커에서 흙냄새가 납니다",
+      body: "주파수를 맞추면 잡음 사이로 분갈이하는 소리가 들립니다. 고장이라기보다 누군가 돌보고 있는 소리 같습니다.",
+      mood: "기묘한 평온"
+    },
+    {
+      id: "rooftop-garden-yeon",
+      packId: "rooftop-garden",
+      order: 4,
+      author: "잠 못 드는 연",
+      subject: "안테나 그림자가 화단까지 닿았어요",
+      body: "그 그림자 아래 앉아 있으면 오늘 못 한 말을 내일 해도 괜찮을 것 같습니다. 고마워요, 계속 틀어줘서.",
+      mood: "회복"
     }
   ];
 
@@ -99,6 +135,7 @@
   let stories = $state(0);
   let antennaLevel = $state(1);
   let transmitterLevel = $state(1);
+  let receivedLetterCount = $state(1);
   let letters = $state<Letter[]>([incomingLetters[0]]);
   let selectedLetter = $state<Letter>(incomingLetters[0]);
   let stationLog = $state("첫 사연이 접수되었습니다. 주파수는 아직 좁지만 방송은 살아 있습니다.");
@@ -112,6 +149,8 @@
   const nextStoryPack = $derived(
     storyPacks.find((pack) => listeners < pack.unlock.listeners || signal < pack.unlock.signal || stories < pack.unlock.stories)
   );
+  const unlockedStoryPackIds = $derived(unlockedStoryPacks.map((pack) => pack.id));
+  const availableLetters = $derived(incomingLetters.filter((letter) => unlockedStoryPackIds.includes(letter.packId)));
   const selectedStoryPack = $derived(storyPacks.find((pack) => pack.id === selectedLetter.packId) ?? storyPacks[0]);
   const nextLetterIn = $derived(18 - (secondsOnline % 18));
   const nextLetterProgress = $derived(Math.round(((18 - nextLetterIn) / 18) * 100));
@@ -128,7 +167,8 @@
   }
 
   function addLetter() {
-    const next = incomingLetters[letters.length % incomingLetters.length];
+    const next = availableLetters[receivedLetterCount % availableLetters.length] ?? incomingLetters[0];
+    receivedLetterCount += 1;
     letters = [next, ...letters].slice(0, 6);
     selectedLetter = next;
     reputation += 1;
@@ -162,6 +202,7 @@
     stories = 0;
     antennaLevel = 1;
     transmitterLevel = 1;
+    receivedLetterCount = 1;
     letters = [incomingLetters[0]];
     selectedLetter = incomingLetters[0];
     stationLog = "방송국 기록을 지우고 첫 사연부터 다시 송출합니다.";
@@ -181,6 +222,7 @@
         antennaLevel = state.antennaLevel ?? antennaLevel;
         transmitterLevel = state.transmitterLevel ?? transmitterLevel;
         letters = Array.isArray(state.letters) ? state.letters.map(normalizeLetter) : letters;
+        receivedLetterCount = state.receivedLetterCount ?? Math.max(letters.length, 1);
         selectedLetter = letters[0] ?? incomingLetters[0];
       }
     }
@@ -205,6 +247,7 @@
             stories,
             antennaLevel,
             transmitterLevel,
+            receivedLetterCount,
             letters
           })
         );
