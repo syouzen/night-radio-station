@@ -51,6 +51,7 @@
   let transmitterLevel = $state(1);
   let letters = $state<Letter[]>([incomingLetters[0]]);
   let selectedLetter = $state<Letter>(incomingLetters[0]);
+  let stationLog = $state("첫 사연이 접수되었습니다. 주파수는 아직 좁지만 방송은 살아 있습니다.");
 
   const saveKey = "night-radio-station-state";
 
@@ -72,20 +73,23 @@
     stories += 1;
     signal = Math.min(100, signal + 4 + antennaLevel);
     listeners += 2 + transmitterLevel;
+    stationLog = `${next.author}의 사연이 도착했습니다. 평판과 이야기가 1씩 늘었습니다.`;
   }
 
   function tuneAntenna() {
     if (!canTuneAntenna) return;
-    reputation -= antennaLevel * 3;
+    reputation -= antennaCost;
     antennaLevel += 1;
     signal = Math.min(100, signal + 12);
+    stationLog = `안테나 Lv.${antennaLevel} 조율 완료. 더 먼 밤의 주파수를 잡습니다.`;
   }
 
   function warmTransmitter() {
     if (!canWarmTransmitter) return;
-    stories -= transmitterLevel * 2;
+    stories -= transmitterCost;
     transmitterLevel += 1;
     listeners += 8;
+    stationLog = `송신기 Lv.${transmitterLevel} 예열 완료. 새 청취자 8명이 주파수에 머뭅니다.`;
   }
 
   onMount(() => {
@@ -203,6 +207,8 @@
         <dd>{stories}</dd>
       </div>
     </dl>
+
+    <p class="station-log" aria-live="polite">{stationLog}</p>
 
     <p class="action-hint">편지함은 신호를 넓히고, 라디오는 더 많은 청취자를 부릅니다.</p>
 
@@ -497,6 +503,16 @@
   .letter-card p {
     color: #c7a77b;
     font-size: 0.72rem;
+  }
+
+  .station-log {
+    margin: 0 0 0.45rem;
+    border: 3px solid #4b3149;
+    background: #15111d;
+    color: #ffcf91;
+    padding: 0.45rem;
+    font-size: 0.78rem;
+    line-height: 1.45;
   }
 
   .eyebrow,
