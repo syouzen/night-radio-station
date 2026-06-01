@@ -2,39 +2,75 @@
   import { browser } from "$app/environment";
   import { onMount } from "svelte";
 
+  type StoryPack = {
+    id: string;
+    title: string;
+    description: string;
+    tone: string;
+    unlockHint: string;
+  };
+
   type Letter = {
+    id: string;
+    packId: StoryPack["id"];
+    order: number;
     author: string;
     subject: string;
     body: string;
     mood: string;
   };
 
+  const storyPacks: StoryPack[] = [
+    {
+      id: "first-night",
+      title: "첫 번째 밤",
+      description: "잠들지 못한 도시가 조심스럽게 주파수에 기대는 시작 사연입니다.",
+      tone: "힐링",
+      unlockHint: "처음부터 열림"
+    }
+  ];
+
   const incomingLetters: Letter[] = [
     {
+      id: "first-night-taxi-minu",
+      packId: "first-night",
+      order: 1,
       author: "택시 기사 민우",
       subject: "오늘도 03:12에 같은 손님을 태웠습니다",
       body: "목적지는 늘 비어 있는 극장입니다. 요금은 낡은 동전 세 개. 내일도 같은 시간에 틀어주세요.",
       mood: "불안"
     },
     {
+      id: "first-night-rooftop-haerin",
+      packId: "first-night",
+      order: 2,
       author: "옥상 정원사 해린",
       subject: "전파가 식물 잎을 흔들어요",
       body: "당신 방송이 나오면 죽은 줄 알았던 달맞이꽃이 다시 폅니다. 주파수를 바꾸지 말아 주세요.",
       mood: "따뜻함"
     },
     {
+      id: "first-night-hidden-city",
+      packId: "first-night",
+      order: 3,
       author: "익명 청취자",
       subject: "97.3 아래에 다른 도시가 있습니다",
       body: "잡음 사이로 들리는 종소리를 따라가면, 지도에 없는 정류장 이름이 반복됩니다. 당신도 들었나요?",
       mood: "미스터리"
     },
     {
+      id: "first-night-store-jun",
+      packId: "first-night",
+      order: 4,
       author: "편의점 야간 알바 준",
       subject: "손님 없는 시간에만 광고가 들립니다",
       body: "분명 방송을 껐는데도 카운터 라디오에서 누군가 잃어버린 물건을 사고 있습니다.",
       mood: "기묘함"
     },
     {
+      id: "first-night-bridge-sora",
+      packId: "first-night",
+      order: 5,
       author: "늦은 귀가의 소라",
       subject: "다리 위 가로등이 하나씩 켜졌어요",
       body: "사연을 보낸 뒤 집까지 가는 길이 덜 무서웠습니다. 이 도시는 아직 깨어 있네요.",
@@ -56,6 +92,7 @@
   const saveKey = "night-radio-station-state";
 
   const currentFrequency = $derived((91.7 + antennaLevel * 1.4).toFixed(1));
+  const selectedStoryPack = $derived(storyPacks.find((pack) => pack.id === selectedLetter.packId) ?? storyPacks[0]);
   const nextLetterIn = $derived(18 - (secondsOnline % 18));
   const nextLetterProgress = $derived(Math.round(((18 - nextLetterIn) / 18) * 100));
   const antennaCost = $derived(antennaLevel * 3);
@@ -65,6 +102,10 @@
   const antennaProgress = $derived(Math.min(100, Math.round((reputation / antennaCost) * 100)));
   const transmitterProgress = $derived(Math.min(100, Math.round((stories / transmitterCost) * 100)));
   const broadcastTime = $derived(`${Math.floor(secondsOnline / 60)}:${String(secondsOnline % 60).padStart(2, "0")}`);
+
+  function normalizeLetter(letter: Partial<Letter>) {
+    return incomingLetters.find((incomingLetter) => incomingLetter.id === letter.id || incomingLetter.subject === letter.subject) ?? incomingLetters[0];
+  }
 
   function addLetter() {
     const next = incomingLetters[letters.length % incomingLetters.length];
@@ -119,7 +160,7 @@
         stories = state.stories ?? stories;
         antennaLevel = state.antennaLevel ?? antennaLevel;
         transmitterLevel = state.transmitterLevel ?? transmitterLevel;
-        letters = state.letters ?? letters;
+        letters = Array.isArray(state.letters) ? state.letters.map(normalizeLetter) : letters;
         selectedLetter = letters[0] ?? incomingLetters[0];
       }
     }
@@ -254,8 +295,8 @@
     </div>
 
     <div class="letter-list" role="list">
-      {#each letters as letter}
-        <button type="button" class:active={selectedLetter.subject === letter.subject} onclick={() => (selectedLetter = letter)}>
+      {#each letters as letter (letter.id)}
+        <button type="button" class:active={selectedLetter.id === letter.id} onclick={() => (selectedLetter = letter)}>
           <span>{letter.author}</span>
           {letter.subject}
         </button>
@@ -263,7 +304,7 @@
     </div>
 
     <article class="letter-card" aria-live="polite">
-      <p>{selectedLetter.mood}</p>
+      <p>{selectedStoryPack.title} · {selectedLetter.mood}</p>
       <h2>{selectedLetter.subject}</h2>
       <span>{selectedLetter.body}</span>
     </article>
