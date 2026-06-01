@@ -58,6 +58,7 @@
   const nextLetterIn = $derived(18 - (secondsOnline % 18));
   const canTuneAntenna = $derived(reputation >= antennaLevel * 3);
   const canWarmTransmitter = $derived(stories >= transmitterLevel * 2);
+  const broadcastTime = $derived(`${Math.floor(secondsOnline / 60)}:${String(secondsOnline % 60).padStart(2, "0")}`);
 
   function addLetter() {
     const next = incomingLetters[letters.length % incomingLetters.length];
@@ -130,91 +131,95 @@
   });
 </script>
 
-<main class="station-shell" aria-label="Night Radio Station control room">
-  <section class="hero-panel" aria-labelledby="station-title">
-    <div>
-      <p class="eyebrow">midnight public broadcast</p>
-      <h1 id="station-title">Night Radio Station</h1>
-      <p class="station-copy">
-        03:00 이후에도 잠들지 못한 도시를 위해 송출 중입니다. 주파수를 넓히고, 사연을 받고,
-        잡음 아래 숨은 이야기를 찾으세요.
-      </p>
+<main class="station-shell" aria-label="Night Radio Station">
+  <section class="pixel-scene" aria-labelledby="station-title">
+    <div class="scene-sky" aria-hidden="true">
+      <span></span><span></span><span></span><span></span>
     </div>
-    <div class="on-air" aria-label="Broadcast status">
-      <span class="pulse" aria-hidden="true"></span>
-      ON AIR
+
+    <div class="studio-room">
+      <div class="wall-light" aria-hidden="true"></div>
+      <div class="window" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="poster" aria-hidden="true">FM</div>
+      <div class="shelf" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="host" role="img" aria-label="심야 DJ 캐릭터">
+        <div class="host-head"></div>
+        <div class="host-body"></div>
+      </div>
+      <button type="button" class="radio-object" onclick={warmTransmitter} disabled={!canWarmTransmitter} aria-label={`송신기 예열 Lv.${transmitterLevel}`}>
+        <span class="antenna"></span>
+        <span class="radio-face"></span>
+      </button>
+      <button type="button" class="letter-box" onclick={tuneAntenna} disabled={!canTuneAntenna} aria-label={`안테나 조율 Lv.${antennaLevel}`}>
+        <span></span>
+      </button>
+      <div class="desk" aria-hidden="true"></div>
     </div>
   </section>
 
-  <section class="dashboard" aria-label="Station dashboard">
-    <article class="radio-card primary-card">
-      <div class="frequency-row">
-        <span>FM {currentFrequency}</span>
-        <strong>{signal}%</strong>
+  <section class="status-panel" aria-label="방송 상태">
+    <div class="title-row">
+      <div>
+        <p class="eyebrow">pixel midnight broadcast</p>
+        <h1 id="station-title">Night Radio Station</h1>
       </div>
-      <div class="dial" aria-hidden="true">
-        <div class="dial-needle" style={`transform: rotate(${signal * 1.8 - 90}deg)`}></div>
+      <div class="on-air"><span aria-hidden="true"></span>ON AIR</div>
+    </div>
+
+    <dl class="metrics-grid">
+      <div>
+        <dt>주파수</dt>
+        <dd>FM {currentFrequency}</dd>
       </div>
-      <p class="hint">다음 사연까지 {nextLetterIn}초. 신호가 좋아질수록 더 먼 동네가 응답합니다.</p>
-    </article>
+      <div>
+        <dt>신호</dt>
+        <dd>{signal}%</dd>
+      </div>
+      <div>
+        <dt>청취자</dt>
+        <dd>{listeners}</dd>
+      </div>
+      <div>
+        <dt>송출</dt>
+        <dd>{broadcastTime}</dd>
+      </div>
+    </dl>
 
-    <article class="radio-card metrics-card">
-      <h2>방송 지표</h2>
-      <dl class="metrics-grid">
-        <div>
-          <dt>청취자</dt>
-          <dd>{listeners}</dd>
-        </div>
-        <div>
-          <dt>평판</dt>
-          <dd>{reputation}</dd>
-        </div>
-        <div>
-          <dt>이야기 조각</dt>
-          <dd>{stories}</dd>
-        </div>
-        <div>
-          <dt>송출 시간</dt>
-          <dd>{Math.floor(secondsOnline / 60)}:{String(secondsOnline % 60).padStart(2, "0")}</dd>
-        </div>
-      </dl>
-    </article>
-
-    <article class="radio-card upgrades-card">
-      <h2>장비 정비</h2>
+    <div class="actions" aria-label="방송국 성장 행동">
       <button type="button" disabled={!canTuneAntenna} onclick={tuneAntenna}>
-        안테나 조율 Lv.{antennaLevel}
+        편지함 확인 Lv.{antennaLevel}
         <span>평판 {antennaLevel * 3} 필요</span>
       </button>
       <button type="button" disabled={!canWarmTransmitter} onclick={warmTransmitter}>
         송신기 예열 Lv.{transmitterLevel}
         <span>이야기 {transmitterLevel * 2} 필요</span>
       </button>
-    </article>
+    </div>
   </section>
 
-  <section class="story-grid" aria-label="Incoming listener letters">
-    <article class="radio-card inbox-card">
+  <section class="letter-panel" aria-label="도착한 사연">
+    <div class="letter-header">
       <h2>도착한 사연</h2>
-      <div class="letter-list" role="list">
-        {#each letters as letter}
-          <button
-            type="button"
-            class:active={selectedLetter.subject === letter.subject}
-            onclick={() => (selectedLetter = letter)}
-          >
-            <span>{letter.author}</span>
-            {letter.subject}
-          </button>
-        {/each}
-      </div>
-    </article>
+      <p>다음 사연까지 {nextLetterIn}초</p>
+    </div>
 
-    <article class="radio-card letter-card" aria-live="polite">
-      <p class="mood">{selectedLetter.mood}</p>
+    <div class="letter-list" role="list">
+      {#each letters as letter}
+        <button type="button" class:active={selectedLetter.subject === letter.subject} onclick={() => (selectedLetter = letter)}>
+          <span>{letter.author}</span>
+          {letter.subject}
+        </button>
+      {/each}
+    </div>
+
+    <article class="letter-card" aria-live="polite">
+      <p>{selectedLetter.mood}</p>
       <h2>{selectedLetter.subject}</h2>
-      <p>{selectedLetter.body}</p>
-      <footer>from {selectedLetter.author}</footer>
+      <span>{selectedLetter.body}</span>
     </article>
   </section>
 </main>
@@ -227,12 +232,10 @@
   :global(body) {
     margin: 0;
     min-width: 320px;
-    color: #f3ead7;
-    background:
-      radial-gradient(circle at top left, rgba(196, 112, 63, 0.18), transparent 32rem),
-      linear-gradient(145deg, #10131c 0%, #171019 48%, #090a0f 100%);
-    font-family:
-      Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #f7e9c7;
+    background: #15111d;
+    font-family: "Courier New", ui-monospace, monospace;
+    image-rendering: pixelated;
   }
 
   button {
@@ -240,43 +243,243 @@
   }
 
   .station-shell {
-    width: min(1120px, 100%);
+    width: min(430px, 100%);
+    min-height: 100vh;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 0.75rem;
+    background: linear-gradient(#20172a, #15111d 52%, #0d0b12);
   }
 
-  .hero-panel,
-  .radio-card {
-    border: 1px solid rgba(230, 196, 132, 0.18);
-    background: rgba(15, 18, 28, 0.76);
-    backdrop-filter: blur(18px);
+  .pixel-scene,
+  .status-panel,
+  .letter-panel {
+    border: 4px solid #4b3149;
+    box-shadow: 0 0 0 4px #120d18;
+    background: #20172a;
   }
 
-  .hero-panel {
+  .pixel-scene {
+    position: relative;
+    height: 260px;
+    overflow: hidden;
+  }
+
+  .scene-sky {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(#0c1228 0 45%, #2d1d34 45% 100%);
+  }
+
+  .scene-sky span {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: #f9df8f;
+  }
+
+  .scene-sky span:nth-child(1) { top: 22px; left: 42px; }
+  .scene-sky span:nth-child(2) { top: 46px; right: 60px; }
+  .scene-sky span:nth-child(3) { top: 72px; left: 180px; }
+  .scene-sky span:nth-child(4) { top: 36px; right: 152px; }
+
+  .studio-room {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    left: 18px;
+    height: 190px;
+    border: 4px solid #6b3f55;
+    background: linear-gradient(#3a263f 0 66%, #2a1c2f 66% 100%);
+  }
+
+  .wall-light {
+    position: absolute;
+    top: 16px;
+    left: 18px;
+    width: 44px;
+    height: 22px;
+    background: #f1a45f;
+    box-shadow: 0 0 0 4px #4b3149, 0 0 32px #f1a45f;
+  }
+
+  .window {
+    position: absolute;
+    top: 18px;
+    right: 22px;
+    width: 78px;
+    height: 54px;
+    border: 4px solid #916070;
+    background: #111a35;
+  }
+
+  .window span {
+    position: absolute;
+    bottom: 10px;
+    width: 10px;
+    background: #27365b;
+  }
+
+  .window span:nth-child(1) { left: 12px; height: 18px; }
+  .window span:nth-child(2) { left: 32px; height: 28px; }
+  .window span:nth-child(3) { left: 52px; height: 12px; }
+
+  .poster {
+    position: absolute;
+    top: 62px;
+    left: 28px;
+    width: 38px;
+    height: 46px;
+    padding-top: 12px;
+    border: 4px solid #6b3f55;
+    color: #20172a;
+    background: #f9df8f;
+    text-align: center;
+    font-weight: 700;
+  }
+
+  .shelf {
+    position: absolute;
+    top: 84px;
+    right: 26px;
+    width: 92px;
+    height: 10px;
+    background: #7a4b4f;
+  }
+
+  .shelf span {
+    display: inline-block;
+    width: 12px;
+    height: 22px;
+    margin-left: 8px;
+    transform: translateY(-20px);
+    background: #b8675c;
+  }
+
+  .host {
+    position: absolute;
+    bottom: 50px;
+    left: 120px;
+    width: 54px;
+    height: 82px;
+  }
+
+  .host-head {
+    width: 42px;
+    height: 36px;
+    margin: 0 auto;
+    border: 4px solid #442638;
+    background: #d58b6a;
+  }
+
+  .host-head::before,
+  .host-head::after {
+    position: absolute;
+    top: 14px;
+    width: 6px;
+    height: 6px;
+    content: "";
+    background: #20172a;
+  }
+
+  .host-head::before { left: 18px; }
+  .host-head::after { right: 18px; }
+
+  .host-body {
+    width: 54px;
+    height: 42px;
+    border: 4px solid #442638;
+    background: #6b5bb9;
+  }
+
+  .radio-object,
+  .letter-box {
+    position: absolute;
+    border: 4px solid #442638;
+    cursor: pointer;
+  }
+
+  .radio-object {
+    right: 104px;
+    bottom: 52px;
+    width: 68px;
+    height: 54px;
+    background: #b8675c;
+  }
+
+  .antenna {
+    position: absolute;
+    top: -34px;
+    left: 28px;
+    width: 4px;
+    height: 34px;
+    background: #d6c08a;
+  }
+
+  .radio-face {
+    position: absolute;
+    inset: 12px;
+    border: 4px solid #442638;
+    background: #f9df8f;
+  }
+
+  .letter-box {
+    right: 26px;
+    bottom: 56px;
+    width: 48px;
+    height: 42px;
+    background: #4f8f80;
+  }
+
+  .letter-box span {
+    display: block;
+    width: 24px;
+    height: 12px;
+    margin: 10px auto;
+    background: #f7e9c7;
+  }
+
+  .radio-object:disabled,
+  .letter-box:disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.65);
+    opacity: 0.55;
+  }
+
+  .desk {
+    position: absolute;
+    right: 46px;
+    bottom: 26px;
+    left: 88px;
+    height: 24px;
+    border: 4px solid #442638;
+    background: #7a4b4f;
+  }
+
+  .status-panel,
+  .letter-panel {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .title-row,
+  .letter-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 1.5rem;
-    padding: 1.5rem;
-    border-radius: 1.25rem;
+    gap: 0.75rem;
   }
 
   .eyebrow,
-  .mood,
-  .hint,
-  footer,
-  dt {
-    color: #b9aa8f;
+  .letter-header p,
+  dt,
+  .actions span,
+  .letter-list span,
+  .letter-card p {
+    color: #c7a77b;
+    font-size: 0.72rem;
   }
 
   .eyebrow,
-  .mood {
-    margin: 0 0 0.5rem;
-    font-size: 0.78rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
-
   h1,
   h2,
   p {
@@ -284,208 +487,116 @@
   }
 
   h1 {
-    margin-bottom: 0.75rem;
-    font-size: clamp(2rem, 7vw, 4.75rem);
-    line-height: 0.95;
+    margin-bottom: 0;
+    font-size: 1.2rem;
+    line-height: 1;
   }
 
   h2 {
-    margin-bottom: 1rem;
-    font-size: 1rem;
-  }
-
-  .station-copy {
-    max-width: 46rem;
-    margin-bottom: 0;
-    color: #d9c9ab;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
   }
 
   .on-air {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    min-width: max-content;
-    padding: 0.55rem 0.75rem;
-    border: 1px solid rgba(255, 125, 85, 0.4);
-    border-radius: 999px;
-    color: #ffd3bc;
-    background: rgba(118, 39, 32, 0.38);
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    gap: 0.35rem;
+    padding: 0.35rem 0.45rem;
+    border: 3px solid #7f383e;
+    color: #ffcf91;
+    background: #3a1724;
+    font-size: 0.8rem;
   }
 
-  .pulse {
-    width: 0.55rem;
-    height: 0.55rem;
-    border-radius: 999px;
-    background: #ff7d55;
-    box-shadow: 0 0 1rem #ff7d55;
-  }
-
-  .dashboard,
-  .story-grid {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr;
-    gap: 1rem;
-    margin-top: 1rem;
-  }
-
-  .story-grid {
-    grid-template-columns: 0.9fr 1.6fr;
-  }
-
-  .radio-card {
-    min-width: 0;
-    padding: 1.25rem;
-    border-radius: 1rem;
-  }
-
-  .frequency-row {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    font-size: clamp(1.75rem, 5vw, 3.5rem);
-    font-weight: 800;
-    letter-spacing: -0.05em;
-  }
-
-  .frequency-row strong {
-    color: #f6b982;
-    font-size: 1.25rem;
-    letter-spacing: 0;
-  }
-
-  .dial {
-    position: relative;
-    height: 5rem;
-    margin: 1.25rem 0;
-    overflow: hidden;
-    border-bottom: 1px solid rgba(230, 196, 132, 0.18);
-  }
-
-  .dial::before {
-    position: absolute;
-    right: 8%;
-    bottom: -7.5rem;
-    left: 8%;
-    height: 15rem;
-    content: "";
-    border: 1px solid rgba(246, 185, 130, 0.3);
-    border-radius: 50%;
-  }
-
-  .dial-needle {
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    width: 2px;
-    height: 4.5rem;
-    background: #ff7d55;
-    transform-origin: bottom;
-    transition: transform 0.5s ease;
+  .on-air span {
+    width: 8px;
+    height: 8px;
+    background: #ff6b4a;
   }
 
   .metrics-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-    margin: 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.4rem;
+    margin: 0.75rem 0;
   }
 
-  dt {
-    font-size: 0.78rem;
+  .metrics-grid div,
+  .letter-card {
+    border: 3px solid #4b3149;
+    background: #15111d;
+    padding: 0.45rem;
   }
 
   dd {
-    margin: 0.2rem 0 0;
-    font-size: 1.5rem;
-    font-weight: 750;
+    margin: 0.15rem 0 0;
+    font-size: 0.9rem;
+    font-weight: 700;
   }
 
-  .upgrades-card {
-    display: grid;
-    align-content: start;
-    gap: 0.75rem;
-  }
-
-  .upgrades-card button,
-  .letter-list button {
-    width: 100%;
-    border: 1px solid rgba(230, 196, 132, 0.2);
-    border-radius: 0.8rem;
-    color: #f8ead0;
-    background: rgba(246, 185, 130, 0.08);
-    cursor: pointer;
-  }
-
-  .upgrades-card button {
-    display: grid;
-    gap: 0.25rem;
-    padding: 0.8rem;
-    text-align: left;
-  }
-
-  .upgrades-card button:hover:not(:disabled),
-  .letter-list button:hover,
-  .letter-list button.active {
-    border-color: rgba(246, 185, 130, 0.55);
-    background: rgba(246, 185, 130, 0.16);
-  }
-
-  .upgrades-card button:disabled {
-    cursor: not-allowed;
-    opacity: 0.45;
-  }
-
-  .upgrades-card span,
-  .letter-list span {
-    display: block;
-    color: #b9aa8f;
-    font-size: 0.78rem;
-  }
-
+  .actions,
   .letter-list {
     display: grid;
-    gap: 0.6rem;
+    gap: 0.45rem;
+  }
+
+  .actions button,
+  .letter-list button {
+    border: 3px solid #6b3f55;
+    color: #f7e9c7;
+    background: #2a1c2f;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .actions button {
+    padding: 0.5rem;
   }
 
   .letter-list button {
-    padding: 0.75rem;
-    text-align: left;
+    padding: 0.45rem;
+  }
+
+  .actions button:hover:not(:disabled),
+  .letter-list button:hover,
+  .letter-list button.active {
+    border-color: #f1a45f;
+    background: #3a263f;
+  }
+
+  .actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .actions span,
+  .letter-list span {
+    display: block;
+    margin-top: 0.2rem;
   }
 
   .letter-card {
-    min-height: 15rem;
+    margin-top: 0.5rem;
   }
 
   .letter-card h2 {
-    font-size: clamp(1.3rem, 4vw, 2rem);
+    margin-bottom: 0.5rem;
+    line-height: 1.35;
   }
 
-  .letter-card p:not(.mood) {
-    color: #e8d9bf;
-    font-size: 1.05rem;
-    line-height: 1.7;
+  .letter-card span {
+    display: block;
+    color: #ead7ad;
+    line-height: 1.6;
   }
 
-  footer {
-    margin-top: 2rem;
-  }
-
-  @media (max-width: 820px) {
+  @media (max-width: 380px) {
     .station-shell {
-      padding: 1rem;
+      padding: 0.5rem;
     }
 
-    .hero-panel,
-    .dashboard,
-    .story-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .hero-panel {
-      display: grid;
+    .metrics-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 </style>
