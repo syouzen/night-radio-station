@@ -92,6 +92,20 @@
     stationLog = `송신기 Lv.${transmitterLevel} 예열 완료. 새 청취자 8명이 주파수에 머뭅니다.`;
   }
 
+  function resetStation() {
+    secondsOnline = 0;
+    signal = 42;
+    listeners = 7;
+    reputation = 0;
+    stories = 0;
+    antennaLevel = 1;
+    transmitterLevel = 1;
+    letters = [incomingLetters[0]];
+    selectedLetter = incomingLetters[0];
+    stationLog = "방송국 기록을 지우고 첫 사연부터 다시 송출합니다.";
+    if (browser) localStorage.removeItem(saveKey);
+  }
+
   onMount(() => {
     if (browser) {
       const saved = localStorage.getItem(saveKey);
@@ -224,6 +238,8 @@
         <span class="progress-track" aria-hidden="true"><span style={`width: ${transmitterProgress}%`}></span></span>
       </button>
     </div>
+
+    <button type="button" class="reset-button" onclick={resetStation}>처음 방송부터 다시 시작</button>
   </section>
 
   <section class="letter-panel" aria-label="도착한 사연">
@@ -592,7 +608,8 @@
   }
 
   .actions button,
-  .letter-list button {
+  .letter-list button,
+  .reset-button {
     border: 3px solid #6b3f55;
     color: #f7e9c7;
     background: #2a1c2f;
@@ -600,8 +617,15 @@
     text-align: left;
   }
 
-  .actions button {
+  .actions button,
+  .reset-button {
     padding: 0.5rem;
+  }
+
+  .reset-button {
+    width: 100%;
+    margin-top: 0.45rem;
+    color: #c7a77b;
   }
 
   .letter-list button {
@@ -610,7 +634,8 @@
 
   .actions button:hover:not(:disabled),
   .letter-list button:hover,
-  .letter-list button.active {
+  .letter-list button.active,
+  .reset-button:hover {
     border-color: #f1a45f;
     background: #3a263f;
   }
