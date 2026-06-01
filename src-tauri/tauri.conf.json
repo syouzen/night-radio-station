@@ -1,20 +1,25 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "night-radio-station",
+  "productName": "Night Radio Station",
   "version": "0.1.0",
   "identifier": "com.syouzen.nightradiostation",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "yarn dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build",
+    "beforeBuildCommand": "yarn build",
     "frontendDist": "../build"
   },
   "app": {
     "windows": [
       {
         "title": "Night Radio Station",
-        "width": 960,
-        "height": 640
+        "width": 420,
+        "height": 640,
+        "minWidth": 360,
+        "minHeight": 520,
+        "resizable": true,
+        "maximizable": false,
+        "center": true
       }
     ],
     "security": {
