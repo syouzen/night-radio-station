@@ -189,6 +189,19 @@
       </div>
     </dl>
 
+    <dl class="resource-strip" aria-label="성장 자원" aria-live="polite">
+      <div>
+        <dt>평판</dt>
+        <dd>{reputation}</dd>
+      </div>
+      <div>
+        <dt>이야기</dt>
+        <dd>{stories}</dd>
+      </div>
+    </dl>
+
+    <p class="action-hint">편지함은 신호를 넓히고, 라디오는 더 많은 청취자를 부릅니다.</p>
+
     <div class="actions" aria-label="방송국 성장 행동">
       <button type="button" disabled={!canTuneAntenna} onclick={tuneAntenna}>
         편지함 확인 Lv.{antennaLevel}
@@ -473,6 +486,7 @@
   .letter-header p,
   dt,
   .actions span,
+  .action-hint,
   .letter-list span,
   .letter-card p {
     color: #c7a77b;
@@ -514,14 +528,24 @@
     background: #ff6b4a;
   }
 
-  .metrics-grid {
+  .metrics-grid,
+  .resource-strip {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.4rem;
-    margin: 0.75rem 0;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0.75rem 0 0.45rem;
+  }
+
+  .resource-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0 0 0.55rem;
   }
 
   .metrics-grid div,
+  .resource-strip div,
   .letter-card {
     border: 3px solid #4b3149;
     background: #15111d;
@@ -532,6 +556,11 @@
     margin: 0.15rem 0 0;
     font-size: 0.9rem;
     font-weight: 700;
+  }
+
+  .action-hint {
+    margin: 0 0 0.45rem;
+    line-height: 1.45;
   }
 
   .actions,
