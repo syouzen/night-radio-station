@@ -57,6 +57,7 @@
 
   const currentFrequency = $derived((91.7 + antennaLevel * 1.4).toFixed(1));
   const nextLetterIn = $derived(18 - (secondsOnline % 18));
+  const nextLetterProgress = $derived(Math.round(((18 - nextLetterIn) / 18) * 100));
   const antennaCost = $derived(antennaLevel * 3);
   const transmitterCost = $derived(transmitterLevel * 2);
   const canTuneAntenna = $derived(reputation >= antennaCost);
@@ -246,6 +247,10 @@
     <div class="letter-header">
       <h2>도착한 사연</h2>
       <p>다음 사연까지 {nextLetterIn}초</p>
+    </div>
+
+    <div class="letter-timer" role="timer" aria-label={`다음 사연까지 ${nextLetterIn}초`}>
+      <span class="progress-track" aria-hidden="true"><span style={`width: ${nextLetterProgress}%`}></span></span>
     </div>
 
     <div class="letter-list" role="list">
@@ -630,6 +635,10 @@
 
   .letter-list button {
     padding: 0.45rem;
+  }
+
+  .letter-timer {
+    margin-bottom: 0.45rem;
   }
 
   .actions button:hover:not(:disabled),
