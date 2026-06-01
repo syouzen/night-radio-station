@@ -56,8 +56,12 @@
 
   const currentFrequency = $derived((91.7 + antennaLevel * 1.4).toFixed(1));
   const nextLetterIn = $derived(18 - (secondsOnline % 18));
-  const canTuneAntenna = $derived(reputation >= antennaLevel * 3);
-  const canWarmTransmitter = $derived(stories >= transmitterLevel * 2);
+  const antennaCost = $derived(antennaLevel * 3);
+  const transmitterCost = $derived(transmitterLevel * 2);
+  const canTuneAntenna = $derived(reputation >= antennaCost);
+  const canWarmTransmitter = $derived(stories >= transmitterCost);
+  const antennaProgress = $derived(Math.min(100, Math.round((reputation / antennaCost) * 100)));
+  const transmitterProgress = $derived(Math.min(100, Math.round((stories / transmitterCost) * 100)));
   const broadcastTime = $derived(`${Math.floor(secondsOnline / 60)}:${String(secondsOnline % 60).padStart(2, "0")}`);
 
   function addLetter() {
@@ -205,11 +209,13 @@
     <div class="actions" aria-label="방송국 성장 행동">
       <button type="button" disabled={!canTuneAntenna} onclick={tuneAntenna}>
         편지함 확인 Lv.{antennaLevel}
-        <span>평판 {antennaLevel * 3} 필요</span>
+        <span>평판 {reputation}/{antennaCost}</span>
+        <span class="progress-track" aria-hidden="true"><span style={`width: ${antennaProgress}%`}></span></span>
       </button>
       <button type="button" disabled={!canWarmTransmitter} onclick={warmTransmitter}>
         송신기 예열 Lv.{transmitterLevel}
-        <span>이야기 {transmitterLevel * 2} 필요</span>
+        <span>이야기 {stories}/{transmitterCost}</span>
+        <span class="progress-track" aria-hidden="true"><span style={`width: ${transmitterProgress}%`}></span></span>
       </button>
     </div>
   </section>
@@ -602,6 +608,18 @@
   .letter-list span {
     display: block;
     margin-top: 0.2rem;
+  }
+
+  .progress-track {
+    height: 8px;
+    border: 2px solid #4b3149;
+    background: #15111d;
+  }
+
+  .progress-track span {
+    height: 100%;
+    margin: 0;
+    background: #f1a45f;
   }
 
   .letter-card {
