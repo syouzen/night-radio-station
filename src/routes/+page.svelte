@@ -8,6 +8,11 @@
     description: string;
     tone: string;
     unlockHint: string;
+    unlock: {
+      listeners: number;
+      signal: number;
+      stories: number;
+    };
   };
 
   type Letter = {
@@ -26,7 +31,16 @@
       title: "첫 번째 밤",
       description: "잠들지 못한 도시가 조심스럽게 주파수에 기대는 시작 사연입니다.",
       tone: "힐링",
-      unlockHint: "처음부터 열림"
+      unlockHint: "처음부터 열림",
+      unlock: { listeners: 0, signal: 0, stories: 0 }
+    },
+    {
+      id: "rooftop-garden",
+      title: "옥상 정원",
+      description: "낡은 건물 옥상에서 식물과 밤공기를 돌보는 청취자들의 사연 묶음입니다.",
+      tone: "힐링",
+      unlockHint: "청취자 18명, 신호 55%, 이야기 4개 필요",
+      unlock: { listeners: 18, signal: 55, stories: 4 }
     }
   ];
 
@@ -92,6 +106,12 @@
   const saveKey = "night-radio-station-state";
 
   const currentFrequency = $derived((91.7 + antennaLevel * 1.4).toFixed(1));
+  const unlockedStoryPacks = $derived(
+    storyPacks.filter((pack) => listeners >= pack.unlock.listeners && signal >= pack.unlock.signal && stories >= pack.unlock.stories)
+  );
+  const nextStoryPack = $derived(
+    storyPacks.find((pack) => listeners < pack.unlock.listeners || signal < pack.unlock.signal || stories < pack.unlock.stories)
+  );
   const selectedStoryPack = $derived(storyPacks.find((pack) => pack.id === selectedLetter.packId) ?? storyPacks[0]);
   const nextLetterIn = $derived(18 - (secondsOnline % 18));
   const nextLetterProgress = $derived(Math.round(((18 - nextLetterIn) / 18) * 100));
@@ -292,6 +312,15 @@
 
     <div class="letter-timer" role="timer" aria-label={`다음 사연까지 ${nextLetterIn}초`}>
       <span class="progress-track" aria-hidden="true"><span style={`width: ${nextLetterProgress}%`}></span></span>
+    </div>
+
+    <div class="pack-status" aria-label="사연 묶음 해금 상태">
+      <span>{unlockedStoryPacks.length}/{storyPacks.length}개 사연 묶음 열림</span>
+      {#if nextStoryPack}
+        <span>다음: {nextStoryPack.title} · {nextStoryPack.unlockHint}</span>
+      {:else}
+        <span>현재 준비된 모든 사연 묶음이 열렸습니다.</span>
+      {/if}
     </div>
 
     <div class="letter-list" role="list">
@@ -648,7 +677,8 @@
   }
 
   .actions,
-  .letter-list {
+  .letter-list,
+  .pack-status {
     display: grid;
     gap: 0.45rem;
   }
@@ -678,8 +708,18 @@
     padding: 0.45rem;
   }
 
-  .letter-timer {
+  .letter-timer,
+  .pack-status {
     margin-bottom: 0.45rem;
+  }
+
+  .pack-status {
+    border: 3px solid #4b3149;
+    background: #15111d;
+    color: #c7a77b;
+    padding: 0.45rem;
+    font-size: 0.72rem;
+    line-height: 1.45;
   }
 
   .actions button:hover:not(:disabled),
