@@ -1,36 +1,36 @@
 # Night Radio Station
 
-Story-driven idle desktop game about running a midnight radio station for a sleepless city.
+잠들지 못한 도시를 위해 심야 라디오 방송국을 운영하는 스토리 중심 방치형 데스크톱 게임입니다.
 
-## Quick Start
-
-```bash
-npm install
-npm run dev
-```
-
-For the desktop app:
+## 빠른 시작
 
 ```bash
-npm run tauri dev
+yarn install
+yarn dev
 ```
 
-Tauri desktop development requires the Rust toolchain.
+데스크톱 앱 실행:
 
-## Commands
+```bash
+yarn tauri dev
+```
 
-| Command | Description |
+Tauri 데스크톱 개발에는 Rust toolchain이 필요합니다.
+
+## 명령어
+
+| 명령어 | 설명 |
 | --- | --- |
-| `npm run dev` | Start the SvelteKit dev server. |
-| `npm run tauri dev` | Start the Tauri desktop app. |
-| `npm run check` | Run Svelte type checking. |
-| `npm run build` | Build the static frontend. |
-| `npm run preview` | Preview the production frontend build. |
+| `yarn dev` | SvelteKit 개발 서버를 시작합니다. |
+| `yarn tauri dev` | Tauri 데스크톱 앱을 시작합니다. |
+| `yarn run check` | Svelte 타입 검사를 실행합니다. |
+| `yarn build` | 정적 프론트엔드를 빌드합니다. |
+| `yarn preview` | 프로덕션 프론트엔드 빌드를 미리 봅니다. |
 
-## Current MVP Loop
+## 현재 MVP 루프
 
-- Broadcast stays on air while the app is open.
-- Listener letters arrive over time.
-- Signal, listeners, reputation, and story fragments grow through idle play.
-- Antenna and transmitter upgrades unlock stronger station progress.
-- Progress saves locally in browser storage for the first slice.
+- 앱이 열려 있는 동안 방송이 계속 송출됩니다.
+- 시간이 지나면 청취자 사연이 도착합니다.
+- 신호, 청취자, 평판, 이야기 조각이 방치 플레이로 증가합니다.
+- 안테나와 송신기 업그레이드로 방송국 진행이 강화됩니다.
+- 첫 slice에서는 브라우저 localStorage에 진행 상태를 저장합니다.

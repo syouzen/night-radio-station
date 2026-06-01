@@ -1,28 +1,54 @@
 # Night Radio Station
 
-Story-driven idle desktop game built with Tauri 2, SvelteKit, and TypeScript.
+Tauri 2, SvelteKit, TypeScript로 만드는 스토리 중심 방치형 데스크톱 게임입니다.
 
-## Product Direction
+## 제품 방향
 
-- Player runs a midnight radio station in a small always-on desktop window.
-- Idle progression should unlock listener letters, strange frequencies, city stories, and emotional narrative beats.
-- Prefer atmosphere, readable state, and small meaningful choices over complex combat or mobile-style monetization.
+- 플레이어는 잠들지 못한 도시를 위해 심야 라디오 방송국을 운영합니다.
+- 게임은 작은 항상켜짐 데스크톱 창에서 진행됩니다.
+- 사용자는 가끔 클릭이나 간단한 상호작용으로 방송국과 세계를 성장시킵니다.
+- 방치 진행은 청취자 사연, 이상한 주파수, 도시의 이야기, 감정적인 서사 조각을 해금해야 합니다.
+- UI/UX는 픽셀 디자인을 기본 방향으로 잡고, 캐릭터와 오브젝트를 화면에 보여주는 구성을 우선합니다.
+- 복잡한 전투나 모바일식 과금 구조보다 분위기, 읽기 쉬운 상태, 작지만 의미 있는 선택을 우선합니다.
 
-## Commands
+## 브랜치 규칙
 
-| Command | Purpose |
+- `main`과 `develop`에는 직접 커밋하지 않습니다.
+- 기능 개발은 `feature/*` 브랜치에서 진행하고 Pull Request로 `develop`에 병합합니다.
+- `develop`은 항상 컴파일 가능하고 검증이 통과한 통합 개발 브랜치로 유지합니다.
+- `main`은 배포 가능한 프로덕션 브랜치입니다.
+- `main`에는 `release/*` 또는 `hotfix/*` 브랜치만 Pull Request로 병합합니다.
+- 배포 시 `v1.0.0` 같은 태그로 버전을 관리합니다.
+
+## 언어 규칙
+
+- 사용자를 향한 응답은 기본적으로 한국어로 작성합니다.
+- `CLAUDE.md`, README, ADR, 사양서, 작업 계획서처럼 에이전트가 읽는 Markdown 문서는 한국어로 작성합니다.
+- 코드 식별자, 패키지명, 명령어, 오류 메시지는 원문을 유지합니다.
+- 외부 도구나 라이브러리 문서를 인용할 때는 필요한 경우에만 영어 원문을 함께 남깁니다.
+
+## 패키지 매니저
+
+- 이 프로젝트는 Yarn 1.x를 사용합니다.
+- `npm run ...` 대신 `yarn ...` 명령을 사용합니다.
+- `package-lock.json`은 사용하지 않고 `yarn.lock`을 커밋합니다.
+
+## 명령어
+
+| 명령어 | 목적 |
 | --- | --- |
-| `npm install` | Install frontend and Tauri CLI dependencies. |
-| `npm run dev` | Run SvelteKit dev server only. |
-| `npm run tauri dev` | Run desktop app. Requires Rust toolchain. |
-| `npm run check` | Run Svelte type checking. |
-| `npm run build` | Build static frontend output for Tauri. |
+| `yarn install` | 프론트엔드와 Tauri CLI 의존성을 설치합니다. |
+| `yarn dev` | SvelteKit 개발 서버만 실행합니다. |
+| `yarn tauri dev` | 데스크톱 앱을 실행합니다. Rust toolchain이 필요합니다. |
+| `yarn run check` | Svelte 타입 검사를 실행합니다. |
+| `yarn build` | Tauri용 정적 프론트엔드 결과물을 빌드합니다. |
+| `yarn preview` | 프로덕션 프론트엔드 빌드를 미리 봅니다. |
 
-## Working Rules
+## 작업 규칙
 
-- Keep MVP vertical: one playable loop before adding systems.
-- Use local-first persistence unless a feature clearly needs network support.
-- Keep UI accessible: semantic buttons, visible focus, readable contrast, responsive layouts.
-- Do not introduce server, account system, payment, cloud save, or multiplayer without explicit product reason.
-- Run `npm run check` and `npm run build` after frontend changes.
-- For Tauri runtime verification, run `npm run tauri dev` when Rust is installed.
+- MVP는 세로 slice로 유지합니다. 새 시스템을 추가하기 전에 하나의 플레이 가능한 루프를 완성합니다.
+- 네트워크 기능이 명확히 필요해지기 전까지 local-first 저장을 우선합니다.
+- UI는 접근성을 지킵니다. semantic button, visible focus, 읽기 쉬운 contrast, responsive layout을 유지합니다.
+- 명확한 제품 이유 없이 서버, 계정 시스템, 결제, 클라우드 저장, 멀티플레이를 추가하지 않습니다.
+- 프론트엔드 변경 후 `yarn run check`와 `yarn build`를 실행합니다.
+- Tauri 런타임 검증은 Rust 설치 후 `yarn tauri dev`로 수행합니다.
