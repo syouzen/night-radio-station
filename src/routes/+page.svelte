@@ -161,6 +161,19 @@
   const antennaProgress = $derived(Math.min(100, Math.round((reputation / antennaCost) * 100)));
   const transmitterProgress = $derived(Math.min(100, Math.round((stories / transmitterCost) * 100)));
   const broadcastTime = $derived(`${Math.floor(secondsOnline / 60)}:${String(secondsOnline % 60).padStart(2, "0")}`);
+  const signalMood = $derived(signal >= 72 ? "clear" : signal >= 44 ? "warm" : "thin");
+  const listenerLightCount = $derived(Math.min(8, Math.max(2, Math.ceil(listeners / 4))));
+  const scenePulse = $derived(Math.min(1, Math.max(0.35, signal / 100 + transmitterLevel * 0.04)));
+  const sceneGlow = $derived(`${Math.round(14 + scenePulse * 26)}px`);
+  const lightOpacity = $derived((0.38 + scenePulse * 0.48).toFixed(2));
+  const antennaReach = $derived(Math.min(62, 28 + antennaLevel * 8));
+  const sceneStatus = $derived(
+    `현재 방송국은 ${signalMood === "clear" ? "선명한" : signalMood === "warm" ? "따뜻한" : "희미한"} 신호로 송출 중입니다. 도시 창문 ${listenerLightCount}개가 켜져 있고 안테나는 Lv.${antennaLevel}, 송신기는 Lv.${transmitterLevel}입니다.`
+  );
+
+  function savedNumber(value: unknown, fallback: number) {
+    return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+  }
 
   function normalizeLetter(letter: Partial<Letter>) {
     return incomingLetters.find((incomingLetter) => incomingLetter.id === letter.id || incomingLetter.subject === letter.subject) ?? incomingLetters[0];
@@ -214,13 +227,13 @@
       const saved = localStorage.getItem(saveKey);
       if (saved) {
         const state = JSON.parse(saved);
-        secondsOnline = state.secondsOnline ?? secondsOnline;
-        signal = state.signal ?? signal;
-        listeners = state.listeners ?? listeners;
-        reputation = state.reputation ?? reputation;
-        stories = state.stories ?? stories;
-        antennaLevel = state.antennaLevel ?? antennaLevel;
-        transmitterLevel = state.transmitterLevel ?? transmitterLevel;
+        secondsOnline = savedNumber(state.secondsOnline, secondsOnline);
+        signal = savedNumber(state.signal, signal);
+        listeners = savedNumber(state.listeners, listeners);
+        reputation = savedNumber(state.reputation, reputation);
+        stories = savedNumber(state.stories, stories);
+        antennaLevel = savedNumber(state.antennaLevel, antennaLevel);
+        transmitterLevel = savedNumber(state.transmitterLevel, transmitterLevel);
         letters = Array.isArray(state.letters) ? state.letters.map(normalizeLetter) : letters;
         receivedLetterCount = state.receivedLetterCount ?? Math.max(letters.length, 1);
         selectedLetter = letters[0] ?? incomingLetters[0];
@@ -259,15 +272,29 @@
 </script>
 
 <main class="station-shell" aria-label="Night Radio Station">
-  <section class="pixel-scene" aria-labelledby="station-title">
+  <section
+    class={`pixel-scene signal-${signalMood}`}
+    style={`--signal-pulse: ${scenePulse}; --scene-glow: ${sceneGlow}; --light-opacity: ${lightOpacity}; --antenna-reach: ${antennaReach}px; --listener-lights: ${listenerLightCount};`}
+    aria-labelledby="station-title"
+    aria-describedby="scene-status"
+  >
+    <p id="scene-status" class="sr-only">{sceneStatus}</p>
     <div class="scene-sky" aria-hidden="true">
       <span></span><span></span><span></span><span></span>
+    </div>
+    <div class="city-lights" aria-hidden="true">
+      {#each Array(listenerLightCount) as _, index}
+        <span style={`left: ${8 + index * 46}px; height: ${10 + (index % 3) * 8}px;`}></span>
+      {/each}
+    </div>
+    <div class="signal-rings" aria-hidden="true">
+      <span></span><span></span><span></span>
     </div>
 
     <div class="studio-room">
       <div class="wall-light" aria-hidden="true"></div>
       <div class="window" aria-hidden="true">
-        <span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span><span></span>
       </div>
       <div class="poster" aria-hidden="true">FM</div>
       <div class="shelf" aria-hidden="true">
@@ -279,10 +306,12 @@
       </div>
       <button type="button" class="radio-object" onclick={warmTransmitter} disabled={!canWarmTransmitter} aria-label={`송신기 예열 Lv.${transmitterLevel}`}>
         <span class="antenna"></span>
+        <span class="radio-wave"></span>
         <span class="radio-face"></span>
       </button>
       <button type="button" class="letter-box" onclick={tuneAntenna} disabled={!canTuneAntenna} aria-label={`안테나 조율 Lv.${antennaLevel}`}>
         <span></span>
+        <span class="letter-flag"></span>
       </button>
       <div class="desk" aria-hidden="true"></div>
     </div>
@@ -401,6 +430,20 @@
     font: inherit;
   }
 
+  button:focus-visible {
+    outline: 3px solid #f9df8f;
+    outline-offset: 3px;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
   .station-shell {
     width: min(430px, 100%);
     min-height: 100vh;
@@ -418,6 +461,9 @@
   }
 
   .pixel-scene {
+    --signal-pulse: 0.5;
+    --antenna-reach: 36px;
+    --listener-lights: 2;
     position: relative;
     height: 260px;
     overflow: hidden;
@@ -426,7 +472,16 @@
   .scene-sky {
     position: absolute;
     inset: 0;
-    background: linear-gradient(#0c1228 0 45%, #2d1d34 45% 100%);
+    background: linear-gradient(#0c1228 0 42%, #2d1d34 42% 100%);
+    transition: background 0.4s ease;
+  }
+
+  .pixel-scene.signal-warm .scene-sky {
+    background: linear-gradient(#111a35 0 42%, #3a263f 42% 100%);
+  }
+
+  .pixel-scene.signal-clear .scene-sky {
+    background: linear-gradient(#17234c 0 42%, #3d2e58 42% 100%);
   }
 
   .scene-sky span {
@@ -440,6 +495,46 @@
   .scene-sky span:nth-child(2) { top: 46px; right: 60px; }
   .scene-sky span:nth-child(3) { top: 72px; left: 180px; }
   .scene-sky span:nth-child(4) { top: 36px; right: 152px; }
+
+  .city-lights {
+    position: absolute;
+    right: 14px;
+    bottom: 204px;
+    left: 14px;
+    height: 36px;
+  }
+
+  .city-lights span {
+    position: absolute;
+    bottom: 0;
+    width: 10px;
+    background: #f9df8f;
+    box-shadow: 0 0 var(--scene-glow) #f1a45f;
+    opacity: var(--light-opacity);
+  }
+
+  .signal-rings {
+    position: absolute;
+    top: 62px;
+    right: 74px;
+    width: 74px;
+    height: 74px;
+    pointer-events: none;
+  }
+
+  .signal-rings span {
+    position: absolute;
+    border: 3px solid rgba(249, 223, 143, 0.18);
+    animation: signal-flicker 2.4s steps(2, end) infinite;
+  }
+
+  .signal-rings span:nth-child(1) { inset: 0; }
+  .signal-rings span:nth-child(2) { inset: 11px; animation-delay: 0.2s; }
+  .signal-rings span:nth-child(3) { inset: 22px; animation-delay: 0.4s; }
+
+  .pixel-scene.signal-clear .signal-rings span {
+    border-color: rgba(249, 223, 143, 0.36);
+  }
 
   .studio-room {
     position: absolute;
@@ -458,7 +553,8 @@
     width: 44px;
     height: 22px;
     background: #f1a45f;
-    box-shadow: 0 0 0 4px #4b3149, 0 0 32px #f1a45f;
+    box-shadow: 0 0 0 4px #4b3149, 0 0 var(--scene-glow) #f1a45f;
+    animation: light-breathe 3.2s steps(3, end) infinite;
   }
 
   .window {
@@ -478,9 +574,17 @@
     background: #27365b;
   }
 
-  .window span:nth-child(1) { left: 12px; height: 18px; }
-  .window span:nth-child(2) { left: 32px; height: 28px; }
-  .window span:nth-child(3) { left: 52px; height: 12px; }
+  .window span:nth-child(1) { left: 10px; height: 18px; }
+  .window span:nth-child(2) { left: 26px; height: 28px; background: #f9df8f; }
+  .window span:nth-child(3) { left: 42px; height: 12px; }
+  .window span:nth-child(4) { left: 58px; height: 24px; background: #f1a45f; }
+  .window span:nth-child(5) { left: 18px; height: 8px; bottom: 30px; }
+  .window span:nth-child(6) { left: 50px; height: 10px; bottom: 32px; background: #f9df8f; }
+
+  .pixel-scene.signal-thin .window span:nth-child(n + 4),
+  .pixel-scene.signal-warm .window span:nth-child(5) {
+    opacity: 0.28;
+  }
 
   .poster {
     position: absolute;
@@ -520,6 +624,7 @@
     left: 120px;
     width: 54px;
     height: 82px;
+    animation: host-idle 2.8s steps(2, end) infinite;
   }
 
   .host-head {
@@ -567,11 +672,32 @@
 
   .antenna {
     position: absolute;
-    top: -34px;
+    top: calc(0px - var(--antenna-reach));
     left: 28px;
     width: 4px;
-    height: 34px;
+    height: var(--antenna-reach);
     background: #d6c08a;
+  }
+
+  .antenna::after {
+    position: absolute;
+    top: -6px;
+    left: -4px;
+    width: 12px;
+    height: 8px;
+    content: "";
+    background: #f9df8f;
+    box-shadow: 0 0 var(--scene-glow) #f1a45f;
+  }
+
+  .radio-wave {
+    position: absolute;
+    top: -18px;
+    left: 14px;
+    width: 40px;
+    height: 18px;
+    border-top: 4px solid rgba(249, 223, 143, 0.52);
+    animation: wave-skip 1.6s steps(2, end) infinite;
   }
 
   .radio-face {
@@ -589,12 +715,29 @@
     background: #4f8f80;
   }
 
-  .letter-box span {
+  .letter-box > span:first-child {
     display: block;
     width: 24px;
     height: 12px;
     margin: 10px auto;
     background: #f7e9c7;
+  }
+
+  .letter-flag {
+    position: absolute;
+    top: -16px;
+    right: 6px;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    background: #ffcf91;
+    opacity: var(--light-opacity);
+    animation: mail-blink 2s steps(2, end) infinite;
+  }
+
+  .letter-box:disabled .letter-flag {
+    opacity: 0.2;
+    animation: none;
   }
 
   .radio-object:disabled,
@@ -809,6 +952,41 @@
     display: block;
     color: #ead7ad;
     line-height: 1.6;
+  }
+
+  @keyframes light-breathe {
+    0%, 100% { opacity: 0.78; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes host-idle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(2px); }
+  }
+
+  @keyframes signal-flicker {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: var(--signal-pulse); }
+  }
+
+  @keyframes wave-skip {
+    0%, 100% { transform: translateY(0); opacity: 0.32; }
+    50% { transform: translateY(-4px); opacity: var(--signal-pulse); }
+  }
+
+  @keyframes mail-blink {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wall-light,
+    .signal-rings span,
+    .host,
+    .radio-wave,
+    .letter-flag {
+      animation: none;
+    }
   }
 
   @media (max-width: 380px) {
