@@ -59,6 +59,16 @@
     preferredCharacterIds: Letter["characterId"][];
   };
 
+  type CollectionSet = {
+    id: string;
+    title: string;
+    description: string;
+    rewardIds: CollectionReward["id"][];
+    bonusTitle: string;
+    bonusDescription: string;
+    sceneClass: string;
+  };
+
   const storyPacks: StoryPack[] = [
     {
       id: "first-night",
@@ -130,6 +140,18 @@
       accent: "#b99cff",
       preferredPackIds: ["first-night", "rooftop-garden"],
       preferredCharacterIds: ["hidden-city-listener", "night-store-jun", "repair-seoho"]
+    }
+  ];
+
+  const collectionSets: CollectionSet[] = [
+    {
+      id: "dawn-keepsake-shelf",
+      title: "새벽 보관함 세트",
+      description: "첫 번째 밤과 옥상 정원의 소장품을 함께 모아 방송국 선반을 하나의 기억 보관함으로 엮습니다.",
+      rewardIds: ["midnight-ticket", "moonflower-pot"],
+      bonusTitle: "기억 보관함 조명",
+      bonusDescription: "세트 완성 시 선반 아래 작은 호박색 조명이 켜지고 다음 보상 목표가 더 선명해집니다.",
+      sceneClass: "archive-lamp"
     }
   ];
 
@@ -270,10 +292,12 @@
   let completedStoryPackIds = $state<StoryPack["id"][]>([]);
   let unlockedRewardIds = $state<CollectionReward["id"][]>([]);
   let currentBandId = $state<FrequencyBand["id"]>(frequencyBands[0].id);
+  let unlockedCollectionSetIds = $state<CollectionSet["id"][]>([]);
   let unlockedPackNotice = $state<StoryPack | null>(null);
   let completedPackNotice = $state<StoryPack | null>(null);
   let offlineReport = $state<OfflineBroadcastReport | null>(null);
   let rewardNotice = $state<CollectionReward | null>(null);
+  let collectionSetNotice = $state<CollectionSet | null>(null);
   let hasLoadedState = $state(false);
   let letters = $state<Letter[]>([incomingLetters[0]]);
   let selectedLetter = $state<Letter>(incomingLetters[0]);
@@ -292,8 +316,11 @@
   const selectedStoryPack = $derived(storyPacks.find((pack) => pack.id === selectedLetter.packId) ?? storyPacks[0]);
   const completedStoryPacks = $derived(storyPacks.filter((pack) => isStoryPackComplete(pack)));
   const unlockedRewards = $derived(collectionRewards.filter((reward) => isRewardUnlocked(reward)));
+  const unlockedCollectionSets = $derived(collectionSets.filter((set) => isCollectionSetUnlocked(set)));
   const nextCollectionReward = $derived(collectionRewards.find((reward) => !isRewardUnlocked(reward)));
+  const nextCollectionSet = $derived(collectionSets.find((set) => !isCollectionSetUnlocked(set)));
   const characterIds = $derived(Array.from(new Set(incomingLetters.map((letter) => letter.characterId))));
+  const completedCharacterIds = $derived(characterIds.filter((characterId) => characterReceivedCount(characterId) === characterLetters(characterId).length));
   const selectedCharacterLetters = $derived(incomingLetters.filter((letter) => letter.characterId === selectedLetter.characterId));
   const selectedReceivedCharacterLetters = $derived(selectedCharacterLetters.filter((letter) => receivedLetterIds.includes(letter.id)));
   const selectedPackReceivedCount = $derived(storyPackReceivedCount(selectedStoryPack));
@@ -315,8 +342,9 @@
   const antennaReach = $derived(Math.min(62, 28 + antennaLevel * 8));
   const isRooftopGardenUnlocked = $derived(unlockedStoryPackIds.includes("rooftop-garden"));
   const isRooftopGardenComplete = $derived(completedStoryPackIds.includes("rooftop-garden"));
+  const isArchiveLampUnlocked = $derived(unlockedCollectionSetIds.includes("dawn-keepsake-shelf"));
   const sceneStatus = $derived(
-    `현재 방송국은 FM ${currentFrequency} ${currentBand.label} 대역에서 ${signalMood === "clear" ? "선명한" : signalMood === "warm" ? "따뜻한" : "희미한"} 신호로 송출 중입니다. 도시 창문 ${listenerLightCount}개가 켜져 있고 안테나는 Lv.${antennaLevel}, 송신기는 Lv.${transmitterLevel}입니다.${isRooftopGardenUnlocked ? " 창가에는 옥상 정원 화분이 놓여 있습니다." : ""}${isRooftopGardenComplete ? " 화분에는 완결된 사연을 닮은 노란 꽃이 피었습니다." : ""}${unlockedRewards.length > 0 ? ` 선반에는 소장품 ${unlockedRewards.length}개가 놓여 있습니다.` : ""}`
+    `현재 방송국은 FM ${currentFrequency} ${currentBand.label} 대역에서 ${signalMood === "clear" ? "선명한" : signalMood === "warm" ? "따뜻한" : "희미한"} 신호로 송출 중입니다. 도시 창문 ${listenerLightCount}개가 켜져 있고 안테나는 Lv.${antennaLevel}, 송신기는 Lv.${transmitterLevel}입니다.${isRooftopGardenUnlocked ? " 창가에는 옥상 정원 화분이 놓여 있습니다." : ""}${isRooftopGardenComplete ? " 화분에는 완결된 사연을 닮은 노란 꽃이 피었습니다." : ""}${unlockedRewards.length > 0 ? ` 선반에는 소장품 ${unlockedRewards.length}개가 놓여 있습니다.` : ""}${completedCharacterIds.length > 0 ? ` 벽 앨범에는 완성된 청취자 기록 ${completedCharacterIds.length}개가 꽂혀 있습니다.` : ""}${isArchiveLampUnlocked ? " 선반 아래 기억 보관함 조명이 켜져 있습니다." : ""}`
   );
 
   function savedNumber(value: unknown, fallback: number) {
@@ -369,6 +397,18 @@
     stationLog = reward
       ? `${completedPack.title} 사연 묶음이 완성되어 ${reward.title} 소장품이 선반에 놓였습니다.`
       : `${completedPack.title} 사연 묶음이 완성되었습니다. DJ가 마지막 코멘트를 편성표에 남겼습니다.`;
+    saveStationState();
+  });
+
+  $effect(() => {
+    if (!hasLoadedState) return;
+
+    const completedSet = collectionSets.find((set) => isCollectionSetComplete(set) && !unlockedCollectionSetIds.includes(set.id));
+    if (!completedSet) return;
+
+    unlockedCollectionSetIds = [...unlockedCollectionSetIds, completedSet.id];
+    collectionSetNotice = completedSet;
+    stationLog = `${completedSet.title} 완성. ${completedSet.bonusTitle}이 방송국 장면에 켜졌습니다.`;
     saveStationState();
   });
 
@@ -517,6 +557,33 @@
     return storyPacks.find((pack) => pack.id === reward.packId)?.title ?? "알 수 없는 사연 묶음";
   }
 
+  function collectionSetRewards(set: CollectionSet) {
+    return collectionRewards.filter((reward) => set.rewardIds.includes(reward.id));
+  }
+
+  function collectionSetUnlockedRewards(set: CollectionSet) {
+    return collectionSetRewards(set).filter((reward) => isRewardUnlocked(reward));
+  }
+
+  function isCollectionSetComplete(set: CollectionSet) {
+    const rewards = collectionSetRewards(set);
+    return rewards.length > 0 && rewards.every((reward) => isRewardUnlocked(reward));
+  }
+
+  function isCollectionSetUnlocked(set: CollectionSet) {
+    return unlockedCollectionSetIds.includes(set.id);
+  }
+
+  function collectionSetProgress(set: CollectionSet) {
+    const rewards = collectionSetRewards(set);
+    if (rewards.length === 0) return 0;
+    return Math.round((collectionSetUnlockedRewards(set).length / rewards.length) * 100);
+  }
+
+  function nextCollectionSetMissingReward(set: CollectionSet) {
+    return collectionSetRewards(set).find((reward) => !isRewardUnlocked(reward));
+  }
+
   function characterLetters(characterId: string) {
     return incomingLetters.filter((letter) => letter.characterId === characterId);
   }
@@ -527,6 +594,25 @@
 
   function characterProgress(characterId: string) {
     return Math.round((characterReceivedCount(characterId) / characterLetters(characterId).length) * 100);
+  }
+
+  function characterNextLetter(characterId: string) {
+    return characterLetters(characterId).find((letter) => !receivedLetterIds.includes(letter.id));
+  }
+
+  function characterRelationStage(characterId: string) {
+    const progress = characterProgress(characterId);
+    if (progress === 100) return "고정 청취자";
+    if (progress >= 50) return "이어지는 목소리";
+    return "낯선 주파수";
+  }
+
+  function characterAlbumHint(characterId: string) {
+    const nextLetter = characterNextLetter(characterId);
+    if (!nextLetter) return "관계 기록 완성";
+
+    const pack = storyPacks.find((storyPack) => storyPack.id === nextLetter.packId) ?? storyPacks[0];
+    return isStoryPackUnlocked(pack) ? `다음 사연: ${nextLetter.sequence}` : `${pack.title} 해금 후 다음 사연 도착`;
   }
 
   function characterName(characterId: string) {
@@ -553,6 +639,7 @@
         completedStoryPackIds,
         unlockedRewardIds,
         currentBandId,
+        unlockedCollectionSetIds,
         letters,
         offlineReport,
         lastSavedAt: Date.now()
@@ -604,10 +691,12 @@
     completedStoryPackIds = [];
     unlockedRewardIds = [];
     currentBandId = frequencyBands[0].id;
+    unlockedCollectionSetIds = [];
     unlockedPackNotice = null;
     completedPackNotice = null;
     offlineReport = null;
     rewardNotice = null;
+    collectionSetNotice = null;
     letters = [incomingLetters[0]];
     selectedLetter = incomingLetters[0];
     stationLog = "방송국 기록을 지우고 첫 사연부터 다시 송출합니다.";
@@ -648,6 +737,10 @@
             ? Array.from(new Set([...state.unlockedRewardIds.filter((id: string) => collectionRewards.some((reward) => reward.id === id)), ...earnedRewardIds]))
             : earnedRewardIds;
           currentBandId = normalizeBandId(state.currentBandId);
+          const earnedCollectionSetIds = collectionSets.filter(isCollectionSetComplete).map((set) => set.id);
+          unlockedCollectionSetIds = Array.isArray(state.unlockedCollectionSetIds)
+            ? Array.from(new Set([...state.unlockedCollectionSetIds.filter((id: string) => collectionSets.some((set) => set.id === id)), ...earnedCollectionSetIds]))
+            : earnedCollectionSetIds;
           selectedLetter = letters[0] ?? incomingLetters[0];
 
           const lastSavedAt = savedNumber(state.lastSavedAt, Date.now());
@@ -680,7 +773,7 @@
 
 <main class="station-shell" style={`--band-accent: ${currentBand.accent};`} aria-label="Night Radio Station">
   <section
-    class={`pixel-scene signal-${signalMood} ${currentBand.sceneClass}${isRooftopGardenUnlocked ? " has-rooftop" : ""}${isRooftopGardenComplete ? " rooftop-complete" : ""}`}
+    class={`pixel-scene signal-${signalMood} ${currentBand.sceneClass}${isRooftopGardenUnlocked ? " has-rooftop" : ""}${isRooftopGardenComplete ? " rooftop-complete" : ""}${isArchiveLampUnlocked ? " has-archive-lamp" : ""}`}
     style={`--signal-pulse: ${scenePulse}; --scene-glow: ${sceneGlow}; --light-opacity: ${lightOpacity}; --antenna-reach: ${antennaReach}px; --listener-lights: ${listenerLightCount}; --band-accent: ${currentBand.accent};`}
     aria-labelledby="station-title"
     aria-describedby="scene-status"
@@ -713,6 +806,11 @@
         </div>
       {/if}
       <div class="poster" aria-hidden="true">FM</div>
+      <div class="album-board" aria-hidden="true">
+        {#each characterIds as characterId (characterId)}
+          <span class:active={characterReceivedCount(characterId) > 0} class:complete={completedCharacterIds.includes(characterId)}></span>
+        {/each}
+      </div>
       <div class="shelf" aria-hidden="true">
         {#if unlockedRewards.length === 0}
           <span class="souvenir placeholder"></span><span class="souvenir placeholder"></span><span class="souvenir placeholder"></span>
@@ -893,18 +991,46 @@
       </div>
     {/if}
 
+    {#if collectionSetNotice}
+      <div class="set-notice" role="status" aria-live="polite">
+        <span>세트 완성</span>
+        <strong>{collectionSetNotice.bonusTitle}</strong>
+        <small>{collectionSetNotice.bonusDescription}</small>
+      </div>
+    {/if}
+
     <div class="collection-summary" aria-label="도감 보상 진행도">
       <div>
         <span>도감 보상</span>
         <strong>{unlockedRewards.length}/{collectionRewards.length}</strong>
       </div>
-      <p>완성된 사연 묶음 {completedStoryPacks.length}/{storyPacks.length}개</p>
+      <p>완성된 사연 묶음 {completedStoryPacks.length}/{storyPacks.length}개 · 세트 {unlockedCollectionSets.length}/{collectionSets.length}개</p>
       {#if nextCollectionReward}
         <small>다음 보상: {nextCollectionReward.title} · {nextCollectionReward.preview}</small>
         <span class="progress-track" aria-hidden="true"><span style={`width: ${rewardProgress(nextCollectionReward)}%`}></span></span>
+        {#if nextCollectionSet}
+          <small>세트 목표: {nextCollectionSet.title} · {collectionSetProgress(nextCollectionSet)}%</small>
+        {/if}
+      {:else if nextCollectionSet}
+        <small>다음 세트: {nextCollectionSet.title} · {nextCollectionSet.bonusTitle}</small>
+        <span class="progress-track" aria-hidden="true"><span style={`width: ${collectionSetProgress(nextCollectionSet)}%`}></span></span>
       {:else}
-        <small>현재 준비된 모든 소장품이 방송국 선반에 놓였습니다.</small>
+        <small>현재 준비된 모든 소장품과 세트 보상이 방송국에 놓였습니다.</small>
       {/if}
+    </div>
+
+    <div class="set-gallery" role="list" aria-label="소장품 세트 도감">
+      {#each collectionSets as set (set.id)}
+        <div class:complete={isCollectionSetUnlocked(set)} class="set-card" role="listitem">
+          <div>
+            <span>{isCollectionSetUnlocked(set) ? "완성" : "수집 중"}</span>
+            <strong>{set.title}</strong>
+          </div>
+          <p>{set.description}</p>
+          <small>{isCollectionSetUnlocked(set) ? set.bonusDescription : `${collectionSetUnlockedRewards(set).length}/${collectionSetRewards(set).length}개 소장품 수집 · 다음: ${nextCollectionSetMissingReward(set)?.title ?? set.bonusTitle}`}</small>
+          <span class="progress-track" aria-hidden="true"><span style={`width: ${collectionSetProgress(set)}%`}></span></span>
+        </div>
+      {/each}
     </div>
 
     <div class="reward-gallery" role="list" aria-label="소장품 도감">
@@ -928,7 +1054,8 @@
             <span>{characterReceivedCount(characterId) === characterLetters(characterId).length ? "완성" : "수집 중"}</span>
             <strong>{characterName(characterId)}</strong>
           </div>
-          <small>연결 사연 {characterReceivedCount(characterId)}/{characterLetters(characterId).length}</small>
+          <p>{characterRelationStage(characterId)}</p>
+          <small>연결 사연 {characterReceivedCount(characterId)}/{characterLetters(characterId).length} · {characterAlbumHint(characterId)}</small>
           <span class="progress-track" aria-hidden="true"><span style={`width: ${characterProgress(characterId)}%`}></span></span>
         </div>
       {/each}
@@ -967,6 +1094,13 @@
         {#each selectedCharacterLetters as threadLetter (threadLetter.id)}
           <span class:heard={receivedLetterIds.includes(threadLetter.id)}>{receivedLetterIds.includes(threadLetter.id) ? threadLetter.sequence : "아직 도착하지 않은 후속 사연"}</span>
         {/each}
+      </div>
+      <div class="listener-album-panel" role="group" aria-label={`${selectedLetter.author} 청취자 앨범`}>
+        <div>
+          <span>{characterRelationStage(selectedLetter.characterId)}</span>
+          <strong>{characterProgress(selectedLetter.characterId)}%</strong>
+        </div>
+        <p>{characterAlbumHint(selectedLetter.characterId)}</p>
       </div>
       <p class="pack-progress-copy">{selectedStoryPack.title} 기록 {selectedPackReceivedCount}/{selectedPackLetterCount}</p>
     </article>
@@ -1314,6 +1448,47 @@
     font-weight: 700;
   }
 
+  .album-board {
+    display: grid;
+    position: absolute;
+    top: 116px;
+    left: 24px;
+    grid-template-columns: repeat(5, 6px);
+    gap: 6px;
+    width: 76px;
+    height: 34px;
+    border: 3px solid #4b3149;
+    padding: 5px 8px;
+    background: #20172a;
+  }
+
+  .album-board::before {
+    position: absolute;
+    top: 6px;
+    left: 8px;
+    width: 60px;
+    height: 4px;
+    content: "";
+    background: #6b3f55;
+    box-shadow: 0 12px 0 #6b3f55;
+  }
+
+  .album-board span {
+    z-index: 1;
+    width: 6px;
+    height: 6px;
+    background: #442638;
+  }
+
+  .album-board span.active {
+    background: #f1a45f;
+  }
+
+  .album-board span.complete {
+    background: #f9df8f;
+    box-shadow: 0 0 10px rgba(249, 223, 143, 0.8);
+  }
+
   .shelf {
     position: absolute;
     top: 84px;
@@ -1321,6 +1496,17 @@
     width: 92px;
     height: 10px;
     background: #7a4b4f;
+  }
+
+  .pixel-scene.has-archive-lamp .shelf::after {
+    position: absolute;
+    right: 8px;
+    bottom: -16px;
+    width: 36px;
+    height: 8px;
+    content: "";
+    background: #f9df8f;
+    box-shadow: 0 0 var(--scene-glow) rgba(249, 223, 143, 0.82);
   }
 
   .souvenir {
@@ -1761,6 +1947,7 @@
   .letter-list,
   .pack-status,
   .pack-collection,
+  .set-gallery,
   .reward-gallery,
   .character-gallery {
     display: grid;
@@ -1801,7 +1988,9 @@
   .unlock-notice,
   .completion-notice,
   .reward-notice,
+  .set-notice,
   .collection-summary,
+  .set-gallery,
   .reward-gallery,
   .character-gallery,
   .pack-collection {
@@ -1813,8 +2002,10 @@
   .unlock-notice,
   .completion-notice,
   .reward-notice,
+  .set-notice,
   .collection-summary,
   .pack-card,
+  .set-card,
   .reward-card,
   .character-card {
     border: 3px solid #4b3149;
@@ -1860,16 +2051,24 @@
 
   .unlock-notice,
   .completion-notice,
-  .reward-notice {
+  .reward-notice,
+  .set-notice {
     border-color: #f1a45f;
     color: #ffcf91;
     background: #2a1c2f;
   }
 
   .completion-notice,
-  .reward-notice {
+  .reward-notice,
+  .set-notice {
     border-color: #f9df8f;
     box-shadow: inset 0 0 0 2px #4f8f80;
+  }
+
+  .set-notice {
+    background:
+      repeating-linear-gradient(90deg, rgba(79, 143, 128, 0.16) 0 4px, transparent 4px 12px),
+      #2a1c2f;
   }
 
   .unlock-notice span,
@@ -1881,12 +2080,18 @@
   .reward-notice span,
   .reward-notice strong,
   .reward-notice small,
+  .set-notice span,
+  .set-notice strong,
+  .set-notice small,
   .collection-summary span,
   .collection-summary strong,
   .collection-summary small,
   .pack-card span,
   .pack-card strong,
   .pack-card small,
+  .set-card span,
+  .set-card strong,
+  .set-card small,
   .reward-card span,
   .reward-card strong,
   .reward-card small,
@@ -1898,6 +2103,7 @@
 
   .collection-summary div,
   .pack-card div,
+  .set-card div,
   .reward-card div,
   .character-card div {
     display: flex;
@@ -1917,9 +2123,16 @@
   }
 
   .pack-card.complete,
+  .set-card.complete,
   .character-card.complete {
     border-color: #f9df8f;
     color: #ffcf91;
+  }
+
+  .set-card.complete {
+    background:
+      linear-gradient(90deg, rgba(249, 223, 143, 0.12), transparent 56%),
+      #15111d;
   }
 
   .reward-card.unlocked {
@@ -1928,8 +2141,15 @@
 
   .collection-summary p,
   .pack-card p,
-  .reward-card p {
+  .set-card p,
+  .reward-card p,
+  .character-card p {
     margin: 0.3rem 0;
+  }
+
+  .character-card p {
+    color: #ead7ad;
+    font-weight: 700;
   }
 
   .actions button:hover:not(:disabled),
@@ -2011,6 +2231,29 @@
   }
 
   .story-thread span.heard {
+    color: #9ed0bc;
+  }
+
+  .listener-album-panel {
+    margin: 0.55rem 0;
+    border: 3px solid #4b3149;
+    padding: 0.45rem;
+    background:
+      linear-gradient(90deg, rgba(79, 143, 128, 0.12), transparent 60%),
+      #15111d;
+  }
+
+  .listener-album-panel div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.45rem;
+    color: #ffcf91;
+    font-weight: 700;
+  }
+
+  .listener-album-panel p {
+    margin: 0.3rem 0 0;
     color: #9ed0bc;
   }
 
