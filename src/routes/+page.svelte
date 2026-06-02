@@ -28,6 +28,16 @@
     djComment: string;
   };
 
+  type OfflineBroadcastReport = {
+    durationLabel: string;
+    elapsedMinutes: number;
+    listeners: number;
+    signal: number;
+    reputation: number;
+    stories: number;
+    letters: Letter[];
+  };
+
   const storyPacks: StoryPack[] = [
     {
       id: "first-night",
@@ -184,12 +194,15 @@
   let completedStoryPackIds = $state<StoryPack["id"][]>([]);
   let unlockedPackNotice = $state<StoryPack | null>(null);
   let completedPackNotice = $state<StoryPack | null>(null);
+  let offlineReport = $state<OfflineBroadcastReport | null>(null);
   let hasLoadedState = $state(false);
   let letters = $state<Letter[]>([incomingLetters[0]]);
   let selectedLetter = $state<Letter>(incomingLetters[0]);
   let stationLog = $state("첫 사연이 접수되었습니다. 주파수는 아직 좁지만 방송은 살아 있습니다.");
 
   const saveKey = "night-radio-station-state";
+  const offlineCapMs = 8 * 60 * 60 * 1000;
+  const offlineMinimumMs = 60 * 1000;
 
   const currentFrequency = $derived((91.7 + antennaLevel * 1.4).toFixed(1));
   const unlockedStoryPacks = $derived(storyPacks.filter((pack) => isStoryPackUnlocked(pack)));
@@ -227,6 +240,10 @@
     return typeof value === "number" && Number.isFinite(value) ? value : fallback;
   }
 
+  function savedNonNegativeInteger(value: unknown, fallback: number) {
+    return Math.max(0, Math.floor(savedNumber(value, fallback)));
+  }
+
   $effect(() => {
     if (!hasLoadedState) return;
 
@@ -254,8 +271,24 @@
     saveStationState();
   });
 
-  function normalizeLetter(letter: Partial<Letter>) {
-    return incomingLetters.find((incomingLetter) => incomingLetter.id === letter.id || incomingLetter.subject === letter.subject) ?? incomingLetters[0];
+  function normalizeLetter(letter: Partial<Letter> | null | undefined) {
+    return incomingLetters.find((incomingLetter) => incomingLetter.id === letter?.id || incomingLetter.subject === letter?.subject) ?? incomingLetters[0];
+  }
+
+  function normalizeOfflineReport(report: Partial<OfflineBroadcastReport> | null) {
+    if (!report) return null;
+    const elapsedMinutes = savedNonNegativeInteger(report.elapsedMinutes, 0);
+    if (elapsedMinutes < 1) return null;
+
+    return {
+      durationLabel: typeof report.durationLabel === "string" ? report.durationLabel : formatOfflineDuration(elapsedMinutes),
+      elapsedMinutes,
+      listeners: savedNonNegativeInteger(report.listeners, 0),
+      signal: savedNonNegativeInteger(report.signal, 0),
+      reputation: savedNonNegativeInteger(report.reputation, 0),
+      stories: savedNonNegativeInteger(report.stories, 0),
+      letters: Array.isArray(report.letters) ? report.letters.map(normalizeLetter) : []
+    };
   }
 
   function isStoryPackUnlocked(pack: StoryPack) {
@@ -304,6 +337,60 @@
     return packLetters.length > 0 && packLetters.every((letter) => receivedLetterIds.includes(letter.id));
   }
 
+  function formatOfflineDuration(minutes: number) {
+    const hours = Math.floor(minutes / 60);
+    const restMinutes = minutes % 60;
+    if (hours === 0) return `${restMinutes}분`;
+    if (restMinutes === 0) return `${hours}시간`;
+    return `${hours}시간 ${restMinutes}분`;
+  }
+
+  function createOfflineReport(elapsedMs: number) {
+    if (elapsedMs < offlineMinimumMs) return null;
+
+    const cappedMs = Math.min(elapsedMs, offlineCapMs);
+    const elapsedMinutes = Math.max(1, Math.floor(cappedMs / 60000));
+    const sourceLetters = orderedLetters().filter((letter) => !receivedLetterIds.includes(letter.id));
+    const fallbackLetters = orderedLetters().length > 0 ? orderedLetters() : incomingLetters;
+    const letterPool = sourceLetters.length > 0 ? sourceLetters : fallbackLetters;
+    const letterCount = Math.min(3, Math.max(1, Math.floor(elapsedMinutes / 90) + 1), letterPool.length);
+    const queuedLetters = letterPool.slice(0, letterCount);
+
+    return {
+      durationLabel: formatOfflineDuration(elapsedMinutes),
+      elapsedMinutes,
+      listeners: Math.max(1, Math.floor(elapsedMinutes / 4) + transmitterLevel),
+      signal: Math.min(18, Math.max(1, Math.floor(elapsedMinutes / 12) + antennaLevel)),
+      reputation: Math.max(1, Math.floor(elapsedMinutes / 45)),
+      stories: Math.max(1, Math.floor(elapsedMinutes / 60)),
+      letters: queuedLetters
+    };
+  }
+
+  function claimOfflineReport() {
+    if (!offlineReport) return;
+
+    const offlineLetters = offlineReport.letters.filter((letter) => !receivedLetterIds.includes(letter.id));
+    secondsOnline += offlineReport.elapsedMinutes * 60;
+    listeners += offlineReport.listeners;
+    signal = Math.min(100, signal + offlineReport.signal);
+    reputation += offlineReport.reputation;
+    stories += offlineReport.stories;
+    receivedLetterCount += offlineLetters.length;
+    receivedLetterIds = knownLetterIds([...receivedLetterIds, ...offlineLetters.map((letter) => letter.id)]);
+    letters = [...offlineLetters, ...letters].slice(0, 6);
+    selectedLetter = offlineLetters[0] ?? selectedLetter;
+    stationLog = `밤새 방송 리포트 확인 완료. ${offlineReport.durationLabel} 동안 새 청취자와 사연이 쌓였습니다.`;
+    offlineReport = null;
+    saveStationState();
+  }
+
+  function dismissOfflineReport() {
+    offlineReport = null;
+    stationLog = "밤샘 방송 리포트를 닫았습니다. 다음 방송 기록부터 다시 모읍니다.";
+    saveStationState();
+  }
+
   function saveStationState() {
     if (!browser) return;
 
@@ -322,7 +409,9 @@
         unlockedStoryPackIds,
         announcedStoryPackIds,
         completedStoryPackIds,
-        letters
+        letters,
+        offlineReport,
+        lastSavedAt: Date.now()
       })
     );
   }
@@ -371,6 +460,7 @@
     completedStoryPackIds = [];
     unlockedPackNotice = null;
     completedPackNotice = null;
+    offlineReport = null;
     letters = [incomingLetters[0]];
     selectedLetter = incomingLetters[0];
     stationLog = "방송국 기록을 지우고 첫 사연부터 다시 송출합니다.";
@@ -381,31 +471,40 @@
     if (browser) {
       const saved = localStorage.getItem(saveKey);
       if (saved) {
-        const state = JSON.parse(saved);
-        secondsOnline = savedNumber(state.secondsOnline, secondsOnline);
-        signal = savedNumber(state.signal, signal);
-        listeners = savedNumber(state.listeners, listeners);
-        reputation = savedNumber(state.reputation, reputation);
-        stories = savedNumber(state.stories, stories);
-        antennaLevel = savedNumber(state.antennaLevel, antennaLevel);
-        transmitterLevel = savedNumber(state.transmitterLevel, transmitterLevel);
-        letters = Array.isArray(state.letters) ? state.letters.map(normalizeLetter) : letters;
-        receivedLetterCount = state.receivedLetterCount ?? Math.max(letters.length, 1);
-        unlockedStoryPackIds = Array.isArray(state.unlockedStoryPackIds)
-          ? state.unlockedStoryPackIds.filter((id: string) => storyPacks.some((pack) => pack.id === id))
-          : storyPacks.filter(hasStoryPackRequirements).map((pack) => pack.id);
-        receivedLetterIds = Array.isArray(state.receivedLetterIds)
-          ? knownLetterIds(state.receivedLetterIds)
-          : migratedReceivedLetterIds(receivedLetterCount, letters, unlockedStoryPackIds);
-        if (!receivedLetterIds.includes(incomingLetters[0].id)) receivedLetterIds = [incomingLetters[0].id, ...receivedLetterIds];
-        if (!unlockedStoryPackIds.includes(storyPacks[0].id)) unlockedStoryPackIds = [storyPacks[0].id, ...unlockedStoryPackIds];
-        announcedStoryPackIds = Array.isArray(state.announcedStoryPackIds)
-          ? state.announcedStoryPackIds.filter((id: string) => storyPacks.some((pack) => pack.id === id))
-          : unlockedStoryPackIds;
-        completedStoryPackIds = Array.isArray(state.completedStoryPackIds)
-          ? state.completedStoryPackIds.filter((id: string) => storyPacks.some((pack) => pack.id === id))
-          : storyPacks.filter(isStoryPackComplete).map((pack) => pack.id);
-        selectedLetter = letters[0] ?? incomingLetters[0];
+        try {
+          const state = JSON.parse(saved);
+          secondsOnline = savedNonNegativeInteger(state.secondsOnline, secondsOnline);
+          signal = Math.max(18, Math.min(100, savedNonNegativeInteger(state.signal, signal)));
+          listeners = Math.max(1, savedNonNegativeInteger(state.listeners, listeners));
+          reputation = savedNonNegativeInteger(state.reputation, reputation);
+          stories = savedNonNegativeInteger(state.stories, stories);
+          antennaLevel = Math.max(1, savedNonNegativeInteger(state.antennaLevel, antennaLevel));
+          transmitterLevel = Math.max(1, savedNonNegativeInteger(state.transmitterLevel, transmitterLevel));
+          letters = Array.isArray(state.letters) ? state.letters.map(normalizeLetter) : letters;
+          receivedLetterCount = savedNonNegativeInteger(state.receivedLetterCount, Math.max(letters.length, 1));
+          unlockedStoryPackIds = Array.isArray(state.unlockedStoryPackIds)
+            ? state.unlockedStoryPackIds.filter((id: string) => storyPacks.some((pack) => pack.id === id))
+            : storyPacks.filter(hasStoryPackRequirements).map((pack) => pack.id);
+          receivedLetterIds = Array.isArray(state.receivedLetterIds)
+            ? knownLetterIds(state.receivedLetterIds)
+            : migratedReceivedLetterIds(receivedLetterCount, letters, unlockedStoryPackIds);
+          if (!receivedLetterIds.includes(incomingLetters[0].id)) receivedLetterIds = [incomingLetters[0].id, ...receivedLetterIds];
+          if (!unlockedStoryPackIds.includes(storyPacks[0].id)) unlockedStoryPackIds = [storyPacks[0].id, ...unlockedStoryPackIds];
+          announcedStoryPackIds = Array.isArray(state.announcedStoryPackIds)
+            ? state.announcedStoryPackIds.filter((id: string) => storyPacks.some((pack) => pack.id === id))
+            : unlockedStoryPackIds;
+          completedStoryPackIds = Array.isArray(state.completedStoryPackIds)
+            ? state.completedStoryPackIds.filter((id: string) => storyPacks.some((pack) => pack.id === id))
+            : storyPacks.filter(isStoryPackComplete).map((pack) => pack.id);
+          selectedLetter = letters[0] ?? incomingLetters[0];
+
+          const lastSavedAt = savedNumber(state.lastSavedAt, Date.now());
+          offlineReport = normalizeOfflineReport(state.offlineReport) ?? createOfflineReport(Date.now() - lastSavedAt);
+          if (offlineReport) saveStationState();
+        } catch {
+          localStorage.removeItem(saveKey);
+          stationLog = "손상된 저장 기록을 지우고 첫 방송 상태로 복구했습니다.";
+        }
       }
     }
 
@@ -524,6 +623,26 @@
 
     <p class="station-log" aria-live="polite">{stationLog}</p>
 
+    {#if offlineReport}
+      <section class="offline-report" aria-labelledby="offline-report-title" aria-live="polite">
+        <div>
+          <span>밤샘 방송 리포트</span>
+          <h2 id="offline-report-title">{offlineReport.durationLabel} 동안 방송국이 깨어 있었습니다</h2>
+        </div>
+        <dl>
+          <div><dt>청취자</dt><dd>+{offlineReport.listeners}</dd></div>
+          <div><dt>신호</dt><dd>+{offlineReport.signal}%</dd></div>
+          <div><dt>평판</dt><dd>+{offlineReport.reputation}</dd></div>
+          <div><dt>이야기</dt><dd>+{offlineReport.stories}</dd></div>
+        </dl>
+        <p>새 사연 {offlineReport.letters.length}통이 책상 위에 쌓였습니다.</p>
+        <div class="offline-actions">
+          <button type="button" onclick={claimOfflineReport}>방송 기록 확인</button>
+          <button type="button" onclick={dismissOfflineReport}>이번 리포트 닫기</button>
+        </div>
+      </section>
+    {/if}
+
     <p class="action-hint">편지함은 신호를 넓히고, 라디오는 더 많은 청취자를 부릅니다.</p>
 
     <div class="actions" aria-label="방송국 성장 행동">
@@ -601,7 +720,7 @@
 
     <div class="letter-list" role="list">
       {#each letters as letter (letter.id)}
-        <button type="button" class:active={selectedLetter.id === letter.id} onclick={() => (selectedLetter = letter)}>
+        <button type="button" class:active={selectedLetter.id === letter.id} aria-pressed={selectedLetter.id === letter.id} onclick={() => (selectedLetter = letter)}>
           <span>{letter.author}</span>
           {letter.subject}
         </button>
@@ -1170,6 +1289,8 @@
   dt,
   .actions span,
   .action-hint,
+  .offline-report > div > span,
+  .offline-report p,
   .letter-list span,
   .letter-card p {
     color: #c7a77b;
@@ -1274,6 +1395,7 @@
   }
 
   .actions,
+  .offline-actions,
   .letter-list,
   .pack-status,
   .pack-collection {
@@ -1282,6 +1404,7 @@
   }
 
   .actions button,
+  .offline-actions button,
   .letter-list button,
   .reset-button {
     border: 3px solid #6b3f55;
@@ -1293,6 +1416,7 @@
   }
 
   .actions button,
+  .offline-actions button,
   .reset-button {
     padding: 0.5rem;
   }
@@ -1309,6 +1433,7 @@
 
   .letter-timer,
   .pack-status,
+  .offline-report,
   .unlock-notice,
   .completion-notice,
   .pack-collection {
@@ -1316,6 +1441,7 @@
   }
 
   .pack-status,
+  .offline-report,
   .unlock-notice,
   .completion-notice,
   .pack-card {
@@ -1325,6 +1451,39 @@
     padding: 0.45rem;
     font-size: 0.72rem;
     line-height: 1.45;
+  }
+
+  .offline-report {
+    border-color: #f1a45f;
+    color: #ffcf91;
+    background:
+      repeating-linear-gradient(90deg, rgba(249, 223, 143, 0.08) 0 4px, transparent 4px 12px),
+      #2a1c2f;
+  }
+
+  .offline-report h2 {
+    margin: 0.2rem 0 0.45rem;
+  }
+
+  .offline-report dl {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.35rem;
+    margin: 0 0 0.45rem;
+  }
+
+  .offline-report dl div {
+    border: 2px solid #6b3f55;
+    background: #15111d;
+    padding: 0.35rem;
+  }
+
+  .offline-report p {
+    margin-bottom: 0.45rem;
+  }
+
+  .offline-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .unlock-notice,
@@ -1372,6 +1531,7 @@
   }
 
   .actions button:hover:not(:disabled),
+  .offline-actions button:hover,
   .letter-list button:hover,
   .letter-list button.active,
   .reset-button:hover {
