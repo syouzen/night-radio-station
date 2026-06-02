@@ -47,6 +47,18 @@
     souvenirClass: string;
   };
 
+  type FrequencyBand = {
+    id: string;
+    label: string;
+    frequency: number;
+    subtitle: string;
+    description: string;
+    sceneClass: string;
+    accent: string;
+    preferredPackIds: StoryPack["id"][];
+    preferredCharacterIds: Letter["characterId"][];
+  };
+
   const storyPacks: StoryPack[] = [
     {
       id: "first-night",
@@ -82,6 +94,42 @@
       description: "옥상 정원의 모든 사연을 모으면 DJ 책상 옆에 노란 꽃 표본이 켜집니다.",
       preview: "옥상 정원 사연 묶음 완성",
       souvenirClass: "flower"
+    }
+  ];
+
+  const frequencyBands: FrequencyBand[] = [
+    {
+      id: "alley",
+      label: "따뜻한 골목",
+      frequency: 91.7,
+      subtitle: "귀가와 가로등",
+      description: "택시, 편의점, 다리 위 귀가길처럼 도시의 가장 낮은 불빛을 잡습니다.",
+      sceneClass: "band-alley",
+      accent: "#ffcf91",
+      preferredPackIds: ["first-night"],
+      preferredCharacterIds: ["taxi-minu", "night-store-jun", "bridge-sora"]
+    },
+    {
+      id: "rooftop",
+      label: "옥상 정원",
+      frequency: 95.3,
+      subtitle: "비와 식물",
+      description: "물탱크, 난간 리본, 달맞이꽃처럼 조용히 자라는 밤의 사연을 잡습니다.",
+      sceneClass: "band-rooftop",
+      accent: "#8bd7a4",
+      preferredPackIds: ["rooftop-garden"],
+      preferredCharacterIds: ["gardener-haerin", "rooftop-dalsoo", "delivery-mira", "sleepless-yeon"]
+    },
+    {
+      id: "hidden-city",
+      label: "숨은 도시",
+      frequency: 97.3,
+      subtitle: "잡음과 정류장",
+      description: "지도에 없는 정류장, 꺼진 라디오, 흙냄새 나는 스피커의 기묘한 주파수입니다.",
+      sceneClass: "band-hidden-city",
+      accent: "#b99cff",
+      preferredPackIds: ["first-night", "rooftop-garden"],
+      preferredCharacterIds: ["hidden-city-listener", "night-store-jun", "repair-seoho"]
     }
   ];
 
@@ -221,6 +269,7 @@
   let announcedStoryPackIds = $state<StoryPack["id"][]>([storyPacks[0].id]);
   let completedStoryPackIds = $state<StoryPack["id"][]>([]);
   let unlockedRewardIds = $state<CollectionReward["id"][]>([]);
+  let currentBandId = $state<FrequencyBand["id"]>(frequencyBands[0].id);
   let unlockedPackNotice = $state<StoryPack | null>(null);
   let completedPackNotice = $state<StoryPack | null>(null);
   let offlineReport = $state<OfflineBroadcastReport | null>(null);
@@ -234,7 +283,8 @@
   const offlineCapMs = 8 * 60 * 60 * 1000;
   const offlineMinimumMs = 60 * 1000;
 
-  const currentFrequency = $derived((91.7 + antennaLevel * 1.4).toFixed(1));
+  const currentBand = $derived(frequencyBands.find((band) => band.id === currentBandId) ?? frequencyBands[0]);
+  const currentFrequency = $derived(currentBand.frequency.toFixed(1));
   const unlockedStoryPacks = $derived(storyPacks.filter((pack) => isStoryPackUnlocked(pack)));
   const nextStoryPack = $derived(storyPacks.find((pack) => !isStoryPackUnlocked(pack)));
   const nextStoryPackProgress = $derived(nextStoryPack ? storyPackProgress(nextStoryPack) : 100);
@@ -266,7 +316,7 @@
   const isRooftopGardenUnlocked = $derived(unlockedStoryPackIds.includes("rooftop-garden"));
   const isRooftopGardenComplete = $derived(completedStoryPackIds.includes("rooftop-garden"));
   const sceneStatus = $derived(
-    `현재 방송국은 ${signalMood === "clear" ? "선명한" : signalMood === "warm" ? "따뜻한" : "희미한"} 신호로 송출 중입니다. 도시 창문 ${listenerLightCount}개가 켜져 있고 안테나는 Lv.${antennaLevel}, 송신기는 Lv.${transmitterLevel}입니다.${isRooftopGardenUnlocked ? " 창가에는 옥상 정원 화분이 놓여 있습니다." : ""}${isRooftopGardenComplete ? " 화분에는 완결된 사연을 닮은 노란 꽃이 피었습니다." : ""}${unlockedRewards.length > 0 ? ` 선반에는 소장품 ${unlockedRewards.length}개가 놓여 있습니다.` : ""}`
+    `현재 방송국은 FM ${currentFrequency} ${currentBand.label} 대역에서 ${signalMood === "clear" ? "선명한" : signalMood === "warm" ? "따뜻한" : "희미한"} 신호로 송출 중입니다. 도시 창문 ${listenerLightCount}개가 켜져 있고 안테나는 Lv.${antennaLevel}, 송신기는 Lv.${transmitterLevel}입니다.${isRooftopGardenUnlocked ? " 창가에는 옥상 정원 화분이 놓여 있습니다." : ""}${isRooftopGardenComplete ? " 화분에는 완결된 사연을 닮은 노란 꽃이 피었습니다." : ""}${unlockedRewards.length > 0 ? ` 선반에는 소장품 ${unlockedRewards.length}개가 놓여 있습니다.` : ""}`
   );
 
   function savedNumber(value: unknown, fallback: number) {
@@ -275,6 +325,17 @@
 
   function savedNonNegativeInteger(value: unknown, fallback: number) {
     return Math.max(0, Math.floor(savedNumber(value, fallback)));
+  }
+
+  function normalizeBandId(value: unknown) {
+    return typeof value === "string" && frequencyBands.some((band) => band.id === value) ? value : frequencyBands[0].id;
+  }
+
+  function frequencyBandScore(letter: Letter, band = currentBand) {
+    let score = 0;
+    if (band.preferredPackIds.includes(letter.packId)) score += 2;
+    if (band.preferredCharacterIds.includes(letter.characterId)) score += 3;
+    return score;
   }
 
   $effect(() => {
@@ -346,10 +407,15 @@
     return Math.round((listenerProgress + signalProgress + storyProgress) / 3);
   }
 
-  function orderedLetters(availablePackIds = unlockedStoryPackIds) {
+  function orderedLetters(availablePackIds = unlockedStoryPackIds, band = currentBand) {
     return incomingLetters
       .filter((letter) => availablePackIds.includes(letter.packId))
-      .sort((a, b) => storyPacks.findIndex((pack) => pack.id === a.packId) - storyPacks.findIndex((pack) => pack.id === b.packId) || a.order - b.order);
+      .sort(
+        (a, b) =>
+          frequencyBandScore(b, band) - frequencyBandScore(a, band) ||
+          storyPacks.findIndex((pack) => pack.id === a.packId) - storyPacks.findIndex((pack) => pack.id === b.packId) ||
+          a.order - b.order
+      );
   }
 
   function knownLetterIds(ids: Letter["id"][]) {
@@ -431,6 +497,13 @@
     saveStationState();
   }
 
+  function selectFrequencyBand(band: FrequencyBand) {
+    if (currentBandId === band.id) return;
+    currentBandId = band.id;
+    stationLog = `FM ${band.frequency.toFixed(1)} ${band.label} 대역으로 조율했습니다. ${band.subtitle} 사연이 더 선명하게 잡힙니다.`;
+    saveStationState();
+  }
+
   function isRewardUnlocked(reward: CollectionReward) {
     return unlockedRewardIds.includes(reward.id);
   }
@@ -479,6 +552,7 @@
         announcedStoryPackIds,
         completedStoryPackIds,
         unlockedRewardIds,
+        currentBandId,
         letters,
         offlineReport,
         lastSavedAt: Date.now()
@@ -496,7 +570,7 @@
     stories += 1;
     signal = Math.min(100, signal + 4 + antennaLevel);
     listeners += 2 + transmitterLevel;
-    stationLog = `${next.author}의 사연이 도착했습니다. DJ 코멘트: ${next.djComment}`;
+    stationLog = `FM ${currentFrequency} ${currentBand.label} 대역에서 ${next.author}의 사연이 도착했습니다. DJ 코멘트: ${next.djComment}`;
   }
 
   function tuneAntenna() {
@@ -529,6 +603,7 @@
     announcedStoryPackIds = [storyPacks[0].id];
     completedStoryPackIds = [];
     unlockedRewardIds = [];
+    currentBandId = frequencyBands[0].id;
     unlockedPackNotice = null;
     completedPackNotice = null;
     offlineReport = null;
@@ -572,6 +647,7 @@
           unlockedRewardIds = Array.isArray(state.unlockedRewardIds)
             ? Array.from(new Set([...state.unlockedRewardIds.filter((id: string) => collectionRewards.some((reward) => reward.id === id)), ...earnedRewardIds]))
             : earnedRewardIds;
+          currentBandId = normalizeBandId(state.currentBandId);
           selectedLetter = letters[0] ?? incomingLetters[0];
 
           const lastSavedAt = savedNumber(state.lastSavedAt, Date.now());
@@ -602,10 +678,10 @@
   });
 </script>
 
-<main class="station-shell" aria-label="Night Radio Station">
+<main class="station-shell" style={`--band-accent: ${currentBand.accent};`} aria-label="Night Radio Station">
   <section
-    class={`pixel-scene signal-${signalMood}${isRooftopGardenUnlocked ? " has-rooftop" : ""}${isRooftopGardenComplete ? " rooftop-complete" : ""}`}
-    style={`--signal-pulse: ${scenePulse}; --scene-glow: ${sceneGlow}; --light-opacity: ${lightOpacity}; --antenna-reach: ${antennaReach}px; --listener-lights: ${listenerLightCount};`}
+    class={`pixel-scene signal-${signalMood} ${currentBand.sceneClass}${isRooftopGardenUnlocked ? " has-rooftop" : ""}${isRooftopGardenComplete ? " rooftop-complete" : ""}`}
+    style={`--signal-pulse: ${scenePulse}; --scene-glow: ${sceneGlow}; --light-opacity: ${lightOpacity}; --antenna-reach: ${antennaReach}px; --listener-lights: ${listenerLightCount}; --band-accent: ${currentBand.accent};`}
     aria-labelledby="station-title"
     aria-describedby="scene-status"
   >
@@ -623,6 +699,7 @@
     <div class="signal-rings" aria-hidden="true">
       <span></span><span></span><span></span>
     </div>
+    <div class={`band-prop ${currentBand.id}`} aria-hidden="true"><span></span><span></span><span></span></div>
 
     <div class="studio-room">
       <div class="wall-light" aria-hidden="true"></div>
@@ -702,6 +779,28 @@
         <dd>{stories}</dd>
       </div>
     </dl>
+
+    <section class="frequency-panel" aria-labelledby="frequency-title">
+      <div>
+        <p class="eyebrow">frequency tuning</p>
+        <h2 id="frequency-title">FM {currentFrequency} · {currentBand.label}</h2>
+        <p>{currentBand.description}</p>
+      </div>
+      <div class="frequency-options" aria-label="주파수 대역 선택">
+        {#each frequencyBands as band (band.id)}
+          <button
+            type="button"
+            class:active={currentBandId === band.id}
+            aria-pressed={currentBandId === band.id}
+            onclick={() => selectFrequencyBand(band)}
+          >
+            <span>{band.frequency.toFixed(1)}</span>
+            {band.label}
+            <small>{band.subtitle}</small>
+          </button>
+        {/each}
+      </div>
+    </section>
 
     <p class="station-log" aria-live="polite">{stationLog}</p>
 
@@ -910,6 +1009,7 @@
   }
 
   .station-shell {
+    --band-accent: #ffcf91;
     width: min(430px, 100%);
     min-height: 100vh;
     margin: 0 auto;
@@ -970,6 +1070,14 @@
     background: linear-gradient(#17234c 0 42%, #3d2e58 42% 100%);
   }
 
+  .pixel-scene.band-rooftop .scene-sky {
+    background: linear-gradient(#102637 0 42%, #2a3f37 42% 100%);
+  }
+
+  .pixel-scene.band-hidden-city .scene-sky {
+    background: linear-gradient(#120f2d 0 42%, #35204d 42% 100%);
+  }
+
   .scene-sky span {
     position: absolute;
     width: 4px;
@@ -1025,8 +1133,8 @@
     position: absolute;
     bottom: 0;
     width: 10px;
-    background: #f9df8f;
-    box-shadow: 0 0 var(--scene-glow) #f1a45f;
+    background: var(--band-accent);
+    box-shadow: 0 0 var(--scene-glow) var(--band-accent);
     opacity: var(--light-opacity);
   }
 
@@ -1041,7 +1149,7 @@
 
   .signal-rings span {
     position: absolute;
-    border: 3px solid rgba(249, 223, 143, 0.18);
+    border: 3px solid var(--band-accent);
     animation: signal-flicker 2.4s steps(2, end) infinite;
   }
 
@@ -1050,8 +1158,34 @@
   .signal-rings span:nth-child(3) { inset: 22px; animation-delay: 0.4s; }
 
   .pixel-scene.signal-clear .signal-rings span {
-    border-color: rgba(249, 223, 143, 0.36);
+    border-color: var(--band-accent);
   }
+
+  .band-prop {
+    position: absolute;
+    right: 22px;
+    bottom: 194px;
+    width: 68px;
+    height: 28px;
+    pointer-events: none;
+  }
+
+  .band-prop span {
+    position: absolute;
+    background: var(--band-accent);
+  }
+
+  .band-prop.alley span:nth-child(1) { right: 6px; bottom: 3px; width: 30px; height: 10px; }
+  .band-prop.alley span:nth-child(2) { right: 32px; bottom: 9px; width: 14px; height: 8px; }
+  .band-prop.alley span:nth-child(3) { right: 0; bottom: 0; width: 8px; height: 8px; background: #ff6b4a; }
+
+  .band-prop.rooftop span:nth-child(1) { right: 12px; bottom: 0; width: 34px; height: 8px; background: #4f8f80; }
+  .band-prop.rooftop span:nth-child(2) { right: 26px; bottom: 8px; width: 8px; height: 18px; }
+  .band-prop.rooftop span:nth-child(3) { right: 18px; bottom: 18px; width: 22px; height: 4px; }
+
+  .band-prop.hidden-city span:nth-child(1) { right: 8px; bottom: 6px; width: 42px; height: 18px; border: 3px solid #442638; }
+  .band-prop.hidden-city span:nth-child(2) { right: 16px; bottom: 12px; width: 8px; height: 4px; background: #f7e9c7; }
+  .band-prop.hidden-city span:nth-child(3) { right: 30px; bottom: 12px; width: 14px; height: 4px; background: #f7e9c7; }
 
   .studio-room {
     position: absolute;
@@ -1100,8 +1234,8 @@
     left: 18px;
     width: 44px;
     height: 22px;
-    background: #f1a45f;
-    box-shadow: 0 0 0 4px #4b3149, 0 0 var(--scene-glow) #f1a45f;
+    background: var(--band-accent);
+    box-shadow: 0 0 0 4px #4b3149, 0 0 var(--scene-glow) var(--band-accent);
     animation: light-breathe 3.2s steps(3, end) infinite;
   }
 
@@ -1481,6 +1615,62 @@
     line-height: 1.45;
   }
 
+  .frequency-panel {
+    margin: 0 0 0.55rem;
+    border: 3px solid #4b3149;
+    background: linear-gradient(90deg, rgba(249, 223, 143, 0.05), transparent 48%), #15111d;
+    padding: 0.55rem;
+  }
+
+  .frequency-panel h2 {
+    margin-bottom: 0.25rem;
+  }
+
+  .frequency-panel p {
+    margin-bottom: 0.45rem;
+    color: #ead7ad;
+    font-size: 0.74rem;
+    line-height: 1.45;
+  }
+
+  .frequency-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .frequency-options button {
+    border: 3px solid #6b3f55;
+    color: #f7e9c7;
+    background: #2a1c2f;
+    cursor: pointer;
+    padding: 0.4rem;
+    text-align: left;
+  }
+
+  .frequency-options button.active {
+    border-color: var(--band-accent);
+    box-shadow: inset 0 0 0 2px var(--band-accent);
+    background: #3a263f;
+  }
+
+  .frequency-options span,
+  .frequency-options small {
+    display: block;
+  }
+
+  .frequency-options span {
+    color: var(--band-accent);
+    font-weight: 700;
+  }
+
+  .frequency-options small {
+    margin-top: 0.2rem;
+    color: #c7a77b;
+    font-size: 0.65rem;
+    line-height: 1.25;
+  }
+
   .eyebrow,
   h1,
   h2,
@@ -1744,6 +1934,7 @@
 
   .actions button:hover:not(:disabled),
   .offline-actions button:hover,
+  .frequency-options button:hover,
   .letter-list button:hover,
   .letter-list button.active,
   .reset-button:hover {
@@ -1873,7 +2064,8 @@
       padding: 0.5rem;
     }
 
-    .metrics-grid {
+    .metrics-grid,
+    .frequency-options {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
