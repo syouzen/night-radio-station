@@ -330,6 +330,8 @@
     <div class="scene-sky" aria-hidden="true">
       <span></span><span></span><span></span><span></span>
     </div>
+    <div class="moon" aria-hidden="true"></div>
+    <div class="roofline" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
     <div class="city-lights" aria-hidden="true">
       {#each Array(listenerLightCount) as _, index}
         <span style={`left: ${8 + index * 46}px; height: ${10 + (index % 3) * 8}px;`}></span>
@@ -341,6 +343,7 @@
 
     <div class="studio-room">
       <div class="wall-light" aria-hidden="true"></div>
+      <div class="studio-grid" aria-hidden="true"></div>
       <div class="window" aria-hidden="true">
         <span></span><span></span><span></span><span></span><span></span><span></span>
       </div>
@@ -352,16 +355,18 @@
         <div class="host-head"></div>
         <div class="host-body"></div>
       </div>
+      <div class="mic-stand" aria-hidden="true"><span></span></div>
       <button type="button" class="radio-object" onclick={warmTransmitter} disabled={!canWarmTransmitter} aria-label={`송신기 예열 Lv.${transmitterLevel}`}>
         <span class="antenna"></span>
         <span class="radio-wave"></span>
         <span class="radio-face"></span>
+        <span class="radio-knobs"></span>
       </button>
       <button type="button" class="letter-box" onclick={tuneAntenna} disabled={!canTuneAntenna} aria-label={`안테나 조율 Lv.${antennaLevel}`}>
         <span></span>
         <span class="letter-flag"></span>
       </button>
-      <div class="desk" aria-hidden="true"></div>
+      <div class="desk" aria-hidden="true"><span></span><span></span><span></span></div>
     </div>
   </section>
 
@@ -499,7 +504,10 @@
     margin: 0;
     min-width: 320px;
     color: #f7e9c7;
-    background: #15111d;
+    background:
+      radial-gradient(circle at 50% 0, rgba(75, 49, 73, 0.34), transparent 280px),
+      repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 4px),
+      #15111d;
     font-family: "Courier New", ui-monospace, monospace;
     image-rendering: pixelated;
   }
@@ -527,14 +535,16 @@
     min-height: 100vh;
     margin: 0 auto;
     padding: 0.75rem;
-    background: linear-gradient(#20172a, #15111d 52%, #0d0b12);
+    background:
+      linear-gradient(90deg, transparent 0 8px, rgba(249, 223, 143, 0.035) 8px 10px, transparent 10px 100%),
+      linear-gradient(#20172a, #15111d 52%, #0d0b12);
   }
 
   .pixel-scene,
   .status-panel,
   .letter-panel {
     border: 4px solid #4b3149;
-    box-shadow: 0 0 0 4px #120d18;
+    box-shadow: 0 0 0 4px #120d18, inset 0 0 0 3px rgba(249, 223, 143, 0.06);
     background: #20172a;
   }
 
@@ -545,6 +555,25 @@
     position: relative;
     height: 260px;
     overflow: hidden;
+  }
+
+  .pixel-scene::before,
+  .pixel-scene::after {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    content: "";
+    pointer-events: none;
+  }
+
+  .pixel-scene::before {
+    border: 3px solid rgba(249, 223, 143, 0.08);
+  }
+
+  .pixel-scene::after {
+    background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 5px);
+    opacity: 0.45;
+    mix-blend-mode: screen;
   }
 
   .scene-sky {
@@ -573,6 +602,37 @@
   .scene-sky span:nth-child(2) { top: 46px; right: 60px; }
   .scene-sky span:nth-child(3) { top: 72px; left: 180px; }
   .scene-sky span:nth-child(4) { top: 36px; right: 152px; }
+
+  .moon {
+    position: absolute;
+    top: 24px;
+    right: 108px;
+    width: 22px;
+    height: 22px;
+    background: #f7e9c7;
+    box-shadow: -8px 4px 0 #0c1228, 0 0 18px rgba(249, 223, 143, 0.36);
+  }
+
+  .roofline {
+    position: absolute;
+    right: 0;
+    bottom: 196px;
+    left: 0;
+    height: 42px;
+    background: linear-gradient(transparent 0 18px, #191425 18px 100%);
+  }
+
+  .roofline span {
+    position: absolute;
+    bottom: 0;
+    width: 34px;
+    background: #100c18;
+  }
+
+  .roofline span:nth-child(1) { left: 18px; height: 18px; }
+  .roofline span:nth-child(2) { left: 86px; height: 30px; }
+  .roofline span:nth-child(3) { right: 92px; height: 22px; }
+  .roofline span:nth-child(4) { right: 28px; height: 34px; }
 
   .city-lights {
     position: absolute;
@@ -621,7 +681,38 @@
     left: 18px;
     height: 190px;
     border: 4px solid #6b3f55;
-    background: linear-gradient(#3a263f 0 66%, #2a1c2f 66% 100%);
+    background:
+      linear-gradient(90deg, rgba(249, 223, 143, 0.05) 0 4px, transparent 4px 100%),
+      linear-gradient(#3a263f 0 66%, #2a1c2f 66% 100%);
+    background-size: 18px 100%, auto;
+  }
+
+  .studio-room::after {
+    position: absolute;
+    right: 0;
+    bottom: 58px;
+    left: 0;
+    height: 4px;
+    content: "";
+    background: #6b3f55;
+  }
+
+  .studio-grid {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(transparent 0 118px, rgba(18, 13, 24, 0.26) 118px 122px, transparent 122px),
+      repeating-linear-gradient(90deg, transparent 0 23px, rgba(249, 223, 143, 0.04) 23px 25px);
+    pointer-events: none;
+  }
+
+  .studio-room > * {
+    z-index: 1;
+  }
+
+  .studio-room::after,
+  .studio-grid {
+    z-index: 0;
   }
 
   .wall-light {
@@ -730,7 +821,45 @@
     width: 54px;
     height: 42px;
     border: 4px solid #442638;
-    background: #6b5bb9;
+    background: linear-gradient(90deg, #6b5bb9 0 50%, #52489a 50% 100%);
+  }
+
+  .mic-stand {
+    position: absolute;
+    bottom: 72px;
+    left: 184px;
+    width: 26px;
+    height: 46px;
+  }
+
+  .mic-stand::before {
+    position: absolute;
+    top: 0;
+    left: 8px;
+    width: 14px;
+    height: 22px;
+    border: 4px solid #442638;
+    content: "";
+    background: #c7a77b;
+  }
+
+  .mic-stand span {
+    position: absolute;
+    bottom: 0;
+    left: 14px;
+    width: 4px;
+    height: 28px;
+    background: #442638;
+  }
+
+  .mic-stand span::after {
+    position: absolute;
+    bottom: 0;
+    left: -10px;
+    width: 24px;
+    height: 4px;
+    content: "";
+    background: #442638;
   }
 
   .radio-object,
@@ -782,7 +911,17 @@
     position: absolute;
     inset: 12px;
     border: 4px solid #442638;
-    background: #f9df8f;
+    background: repeating-linear-gradient(90deg, #f9df8f 0 5px, #f1a45f 5px 8px);
+  }
+
+  .radio-knobs {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    width: 8px;
+    height: 8px;
+    background: #442638;
+    box-shadow: -14px 0 0 #442638;
   }
 
   .letter-box {
@@ -832,13 +971,29 @@
     left: 88px;
     height: 24px;
     border: 4px solid #442638;
-    background: #7a4b4f;
+    background: linear-gradient(#9a5d55 0 45%, #7a4b4f 45% 100%);
   }
+
+  .desk span {
+    position: absolute;
+    top: 6px;
+    width: 20px;
+    height: 6px;
+    background: #2a1c2f;
+  }
+
+  .desk span:nth-child(1) { left: 14px; }
+  .desk span:nth-child(2) { left: 48px; background: #f1a45f; }
+  .desk span:nth-child(3) { right: 16px; }
 
   .status-panel,
   .letter-panel {
     margin-top: 0.75rem;
     padding: 0.75rem;
+    background:
+      linear-gradient(90deg, rgba(249, 223, 143, 0.04) 0 3px, transparent 3px 100%),
+      #20172a;
+    background-size: 16px 100%, auto;
   }
 
   .title-row,
@@ -863,7 +1018,9 @@
   .station-log {
     margin: 0 0 0.45rem;
     border: 3px solid #4b3149;
-    background: #15111d;
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 207, 145, 0.08) 0 5px, transparent 5px 12px),
+      #15111d;
     color: #ffcf91;
     padding: 0.45rem;
     font-size: 0.78rem;
@@ -903,6 +1060,8 @@
     width: 8px;
     height: 8px;
     background: #ff6b4a;
+    box-shadow: 0 0 10px #ff6b4a;
+    animation: on-air-pulse 1.4s steps(2, end) infinite;
   }
 
   .metrics-grid,
@@ -924,9 +1083,22 @@
   .metrics-grid div,
   .resource-strip div,
   .letter-card {
+    position: relative;
     border: 3px solid #4b3149;
-    background: #15111d;
+    background: linear-gradient(135deg, rgba(249, 223, 143, 0.05), transparent 34%), #15111d;
     padding: 0.45rem;
+  }
+
+  .metrics-grid div::after,
+  .resource-strip div::after,
+  .letter-card::after {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    width: 8px;
+    height: 8px;
+    content: "";
+    background: rgba(249, 223, 143, 0.16);
   }
 
   dd {
@@ -952,8 +1124,9 @@
   .letter-list button,
   .reset-button {
     border: 3px solid #6b3f55;
+    box-shadow: inset 3px 0 0 rgba(249, 223, 143, 0.08), inset -3px -3px 0 rgba(18, 13, 24, 0.42);
     color: #f7e9c7;
-    background: #2a1c2f;
+    background: linear-gradient(90deg, rgba(79, 143, 128, 0.12), transparent 42%), #2a1c2f;
     cursor: pointer;
     text-align: left;
   }
@@ -1094,12 +1267,18 @@
     50% { transform: translateY(-3px); }
   }
 
+  @keyframes on-air-pulse {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 1; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .wall-light,
     .signal-rings span,
     .host,
     .radio-wave,
-    .letter-flag {
+    .letter-flag,
+    .on-air span {
       animation: none;
     }
   }
