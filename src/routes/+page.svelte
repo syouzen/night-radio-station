@@ -136,6 +136,10 @@
   let antennaLevel = $state(1);
   let transmitterLevel = $state(1);
   let receivedLetterCount = $state(1);
+  let unlockedStoryPackIds = $state<StoryPack["id"][]>([storyPacks[0].id]);
+  let announcedStoryPackIds = $state<StoryPack["id"][]>([storyPacks[0].id]);
+  let unlockedPackNotice = $state<StoryPack | null>(null);
+  let hasLoadedState = $state(false);
   let letters = $state<Letter[]>([incomingLetters[0]]);
   let selectedLetter = $state<Letter>(incomingLetters[0]);
   let stationLog = $state("첫 사연이 접수되었습니다. 주파수는 아직 좁지만 방송은 살아 있습니다.");
@@ -143,13 +147,9 @@
   const saveKey = "night-radio-station-state";
 
   const currentFrequency = $derived((91.7 + antennaLevel * 1.4).toFixed(1));
-  const unlockedStoryPacks = $derived(
-    storyPacks.filter((pack) => listeners >= pack.unlock.listeners && signal >= pack.unlock.signal && stories >= pack.unlock.stories)
-  );
-  const nextStoryPack = $derived(
-    storyPacks.find((pack) => listeners < pack.unlock.listeners || signal < pack.unlock.signal || stories < pack.unlock.stories)
-  );
-  const unlockedStoryPackIds = $derived(unlockedStoryPacks.map((pack) => pack.id));
+  const unlockedStoryPacks = $derived(storyPacks.filter((pack) => isStoryPackUnlocked(pack)));
+  const nextStoryPack = $derived(storyPacks.find((pack) => !isStoryPackUnlocked(pack)));
+  const nextStoryPackProgress = $derived(nextStoryPack ? storyPackProgress(nextStoryPack) : 100);
   const availableLetters = $derived(incomingLetters.filter((letter) => unlockedStoryPackIds.includes(letter.packId)));
   const selectedStoryPack = $derived(storyPacks.find((pack) => pack.id === selectedLetter.packId) ?? storyPacks[0]);
   const nextLetterIn = $derived(18 - (secondsOnline % 18));
@@ -175,8 +175,59 @@
     return typeof value === "number" && Number.isFinite(value) ? value : fallback;
   }
 
+  $effect(() => {
+    if (!hasLoadedState) return;
+
+    const freshPack = storyPacks.find((pack) => !isStoryPackUnlocked(pack) && hasStoryPackRequirements(pack));
+    if (!freshPack) return;
+
+    unlockedStoryPackIds = [...unlockedStoryPackIds, freshPack.id];
+    if (announcedStoryPackIds.includes(freshPack.id)) return;
+
+    announcedStoryPackIds = [...announcedStoryPackIds, freshPack.id];
+    unlockedPackNotice = freshPack;
+    stationLog = `${freshPack.title} 사연 묶음이 열렸습니다. 새 밤의 편지가 편성표에 들어왔습니다.`;
+    saveStationState();
+  });
+
   function normalizeLetter(letter: Partial<Letter>) {
     return incomingLetters.find((incomingLetter) => incomingLetter.id === letter.id || incomingLetter.subject === letter.subject) ?? incomingLetters[0];
+  }
+
+  function isStoryPackUnlocked(pack: StoryPack) {
+    return unlockedStoryPackIds.includes(pack.id);
+  }
+
+  function hasStoryPackRequirements(pack: StoryPack) {
+    return listeners >= pack.unlock.listeners && signal >= pack.unlock.signal && stories >= pack.unlock.stories;
+  }
+
+  function storyPackProgress(pack: StoryPack) {
+    const listenerProgress = pack.unlock.listeners === 0 ? 100 : Math.min(100, Math.round((listeners / pack.unlock.listeners) * 100));
+    const signalProgress = pack.unlock.signal === 0 ? 100 : Math.min(100, Math.round((signal / pack.unlock.signal) * 100));
+    const storyProgress = pack.unlock.stories === 0 ? 100 : Math.min(100, Math.round((stories / pack.unlock.stories) * 100));
+    return Math.round((listenerProgress + signalProgress + storyProgress) / 3);
+  }
+
+  function saveStationState() {
+    if (!browser) return;
+
+    localStorage.setItem(
+      saveKey,
+      JSON.stringify({
+        secondsOnline,
+        signal,
+        listeners,
+        reputation,
+        stories,
+        antennaLevel,
+        transmitterLevel,
+        receivedLetterCount,
+        unlockedStoryPackIds,
+        announcedStoryPackIds,
+        letters
+      })
+    );
   }
 
   function addLetter() {
@@ -216,6 +267,9 @@
     antennaLevel = 1;
     transmitterLevel = 1;
     receivedLetterCount = 1;
+    unlockedStoryPackIds = [storyPacks[0].id];
+    announcedStoryPackIds = [storyPacks[0].id];
+    unlockedPackNotice = null;
     letters = [incomingLetters[0]];
     selectedLetter = incomingLetters[0];
     stationLog = "방송국 기록을 지우고 첫 사연부터 다시 송출합니다.";
@@ -236,9 +290,18 @@
         transmitterLevel = savedNumber(state.transmitterLevel, transmitterLevel);
         letters = Array.isArray(state.letters) ? state.letters.map(normalizeLetter) : letters;
         receivedLetterCount = state.receivedLetterCount ?? Math.max(letters.length, 1);
+        unlockedStoryPackIds = Array.isArray(state.unlockedStoryPackIds)
+          ? state.unlockedStoryPackIds.filter((id: string) => storyPacks.some((pack) => pack.id === id))
+          : storyPacks.filter(hasStoryPackRequirements).map((pack) => pack.id);
+        if (!unlockedStoryPackIds.includes(storyPacks[0].id)) unlockedStoryPackIds = [storyPacks[0].id, ...unlockedStoryPackIds];
+        announcedStoryPackIds = Array.isArray(state.announcedStoryPackIds)
+          ? state.announcedStoryPackIds.filter((id: string) => storyPacks.some((pack) => pack.id === id))
+          : unlockedStoryPackIds;
         selectedLetter = letters[0] ?? incomingLetters[0];
       }
     }
+
+    hasLoadedState = true;
 
     const interval = window.setInterval(() => {
       secondsOnline += 1;
@@ -249,22 +312,7 @@
         addLetter();
       }
 
-      if (browser) {
-        localStorage.setItem(
-          saveKey,
-          JSON.stringify({
-            secondsOnline,
-            signal,
-            listeners,
-            reputation,
-            stories,
-            antennaLevel,
-            transmitterLevel,
-            receivedLetterCount,
-            letters
-          })
-        );
-      }
+      saveStationState();
     }, 1000);
 
     return () => window.clearInterval(interval);
@@ -390,9 +438,39 @@
       <span>{unlockedStoryPacks.length}/{storyPacks.length}개 사연 묶음 열림</span>
       {#if nextStoryPack}
         <span>다음: {nextStoryPack.title} · {nextStoryPack.unlockHint}</span>
+        <span
+          class="progress-track"
+          role="progressbar"
+          aria-label={`${nextStoryPack.title} 해금 진행도`}
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow={nextStoryPackProgress}
+        ><span style={`width: ${nextStoryPackProgress}%`}></span></span>
       {:else}
         <span>현재 준비된 모든 사연 묶음이 열렸습니다.</span>
       {/if}
+    </div>
+
+    {#if unlockedPackNotice}
+      <div class="unlock-notice" role="status" aria-live="polite">
+        <span>새 사연 묶음 해금</span>
+        <strong>{unlockedPackNotice.title}</strong>
+        <small>{unlockedPackNotice.description}</small>
+      </div>
+    {/if}
+
+    <div class="pack-collection" role="list" aria-label="사연 묶음 보관함">
+      {#each storyPacks as pack (pack.id)}
+        <div class:unlocked={isStoryPackUnlocked(pack)} class="pack-card" role="listitem">
+          <div>
+            <span>{isStoryPackUnlocked(pack) ? "열림" : "잠김"}</span>
+            <strong>{pack.title}</strong>
+          </div>
+          <p>{pack.description}</p>
+          <small>{isStoryPackUnlocked(pack) ? `${pack.tone} 사연 수신 가능` : pack.unlockHint}</small>
+          <span class="progress-track" aria-hidden="true"><span style={`width: ${storyPackProgress(pack)}%`}></span></span>
+        </div>
+      {/each}
     </div>
 
     <div class="letter-list" role="list">
@@ -864,7 +942,8 @@
 
   .actions,
   .letter-list,
-  .pack-status {
+  .pack-status,
+  .pack-collection {
     display: grid;
     gap: 0.45rem;
   }
@@ -895,17 +974,51 @@
   }
 
   .letter-timer,
-  .pack-status {
+  .pack-status,
+  .unlock-notice,
+  .pack-collection {
     margin-bottom: 0.45rem;
   }
 
-  .pack-status {
+  .pack-status,
+  .unlock-notice,
+  .pack-card {
     border: 3px solid #4b3149;
     background: #15111d;
     color: #c7a77b;
     padding: 0.45rem;
     font-size: 0.72rem;
     line-height: 1.45;
+  }
+
+  .unlock-notice {
+    border-color: #f1a45f;
+    color: #ffcf91;
+    background: #2a1c2f;
+  }
+
+  .unlock-notice span,
+  .unlock-notice strong,
+  .unlock-notice small,
+  .pack-card span,
+  .pack-card strong,
+  .pack-card small {
+    display: block;
+  }
+
+  .pack-card.unlocked {
+    border-color: #4f8f80;
+  }
+
+  .pack-card div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.45rem;
+  }
+
+  .pack-card p {
+    margin: 0.3rem 0;
   }
 
   .actions button:hover:not(:disabled),
@@ -928,12 +1041,14 @@
   }
 
   .progress-track {
+    display: block;
     height: 8px;
     border: 2px solid #4b3149;
     background: #15111d;
   }
 
   .progress-track span {
+    display: block;
     height: 100%;
     margin: 0;
     background: #f1a45f;
