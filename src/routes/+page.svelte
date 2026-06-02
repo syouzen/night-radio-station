@@ -69,6 +69,41 @@
     sceneClass: string;
   };
 
+  type RoomPlacementSlot = {
+    id: string;
+    title: string;
+    description: string;
+    emptyLabel: string;
+    sceneClass: string;
+  };
+
+  type RoomPlacement = {
+    slotId: RoomPlacementSlot["id"];
+    rewardId: CollectionReward["id"] | null;
+  };
+
+  type RoomAmbience = {
+    id: string;
+    label: string;
+    description: string;
+    sceneClass: string;
+  };
+
+  type ListenerVisitTrace = {
+    characterId: Letter["characterId"];
+    title: string;
+    description: string;
+    sceneClass: string;
+  };
+
+  type KeepsakeSynergy = {
+    id: string;
+    title: string;
+    description: string;
+    rewardIds: CollectionReward["id"][];
+    sceneClass: string;
+  };
+
   const storyPacks: StoryPack[] = [
     {
       id: "first-night",
@@ -152,6 +187,73 @@
       bonusTitle: "기억 보관함 조명",
       bonusDescription: "세트 완성 시 선반 아래 작은 호박색 조명이 켜지고 다음 보상 목표가 더 선명해집니다.",
       sceneClass: "archive-lamp"
+    }
+  ];
+
+  const roomPlacementSlots: RoomPlacementSlot[] = [
+    {
+      id: "dj-desk",
+      title: "DJ 책상",
+      description: "방송 중 가장 자주 보이는 자리입니다. 배치한 소장품은 새 사연 신호를 조금 더 선명하게 만듭니다.",
+      emptyLabel: "책상 위가 비어 있습니다",
+      sceneClass: "desk-slot"
+    },
+    {
+      id: "memory-shelf",
+      title: "기억 선반",
+      description: "세트 보관함과 맞닿은 자리입니다. 배치한 소장품은 청취자가 머무는 불빛을 늘립니다.",
+      emptyLabel: "선반에 남길 물건을 기다립니다",
+      sceneClass: "shelf-slot"
+    },
+    {
+      id: "window-nook",
+      title: "창가 틈새",
+      description: "도시 야경 옆 작은 전시 공간입니다. 배치한 소장품은 장면 분위기를 가장 먼저 바꿉니다.",
+      emptyLabel: "창가에 아직 전시품이 없습니다",
+      sceneClass: "window-slot"
+    }
+  ];
+
+  const roomAmbiences: RoomAmbience[] = [
+    {
+      id: "quiet-room",
+      label: "고요한 방송실",
+      description: "소장품이 아직 적어 벽 조명과 라디오 파동만 조용히 움직입니다.",
+      sceneClass: "ambience-quiet"
+    },
+    {
+      id: "warm-room",
+      label: "따뜻한 방송실",
+      description: "배치된 소장품이나 청취자 흔적이 생기면 방 전체가 부드럽게 살아납니다.",
+      sceneClass: "ambience-warm"
+    },
+    {
+      id: "alive-room",
+      label: "깨어 있는 방송실",
+      description: "소장품 조합과 완성된 청취자 흔적이 밤마다 작은 반응을 일으킵니다.",
+      sceneClass: "ambience-alive"
+    }
+  ];
+
+  const listenerVisitTraces: ListenerVisitTrace[] = [
+    { characterId: "taxi-minu", title: "극장행 영수증", description: "민우가 남긴 낡은 요금 영수증이 DJ 책상 옆에 꽂혔습니다.", sceneClass: "trace-taxi" },
+    { characterId: "gardener-haerin", title: "작은 잎 그림", description: "해린이 보낸 잎 그림이 창가 조명 아래 붙었습니다.", sceneClass: "trace-leaf" },
+    { characterId: "hidden-city-listener", title: "없는 정류장 표식", description: "익명 청취자가 남긴 정류장 기호가 벽 앨범 구석에서 깜빡입니다.", sceneClass: "trace-hidden" },
+    { characterId: "night-store-jun", title: "새벽 계산표", description: "준이 접어 둔 계산표가 라디오 잡음에 맞춰 흔들립니다.", sceneClass: "trace-store" },
+    { characterId: "bridge-sora", title: "가로등 스티커", description: "소라가 보낸 작은 가로등 스티커가 도시 창문 옆에 붙었습니다.", sceneClass: "trace-bridge" },
+    { characterId: "rooftop-dalsoo", title: "물뿌리개 메모", description: "달수가 남긴 물주기 메모가 옥상 화분 옆에 놓였습니다.", sceneClass: "trace-water" },
+    { characterId: "delivery-mira", title: "노란 배송 리본", description: "미라의 리본이 창가 틈새에서 새벽빛을 붙잡습니다.", sceneClass: "trace-ribbon" },
+    { characterId: "repair-seoho", title: "수리 나사", description: "서호가 남긴 나사가 스피커 진동에 맞춰 작게 빛납니다.", sceneClass: "trace-screw" },
+    { characterId: "sleepless-yeon", title: "안테나 그림자 쪽지", description: "연이 접어 둔 쪽지가 안테나 그림자 아래 머뭅니다.", sceneClass: "trace-note" }
+  ];
+
+  const keepsakeSynergies: KeepsakeSynergy[] = [
+    {
+      id: "dawn-memory-glow",
+      title: "새벽 기억 조명",
+      description: "심야 극장 티켓과 달맞이꽃 표본이 함께 배치되면 선반 조명이 더 넓게 퍼집니다.",
+      rewardIds: ["midnight-ticket", "moonflower-pot"],
+      sceneClass: "synergy-dawn"
     }
   ];
 
@@ -293,6 +395,7 @@
   let unlockedRewardIds = $state<CollectionReward["id"][]>([]);
   let currentBandId = $state<FrequencyBand["id"]>(frequencyBands[0].id);
   let unlockedCollectionSetIds = $state<CollectionSet["id"][]>([]);
+  let roomPlacements = $state<RoomPlacement[]>(createDefaultRoomPlacements());
   let unlockedPackNotice = $state<StoryPack | null>(null);
   let completedPackNotice = $state<StoryPack | null>(null);
   let offlineReport = $state<OfflineBroadcastReport | null>(null);
@@ -319,8 +422,17 @@
   const unlockedCollectionSets = $derived(collectionSets.filter((set) => isCollectionSetUnlocked(set)));
   const nextCollectionReward = $derived(collectionRewards.find((reward) => !isRewardUnlocked(reward)));
   const nextCollectionSet = $derived(collectionSets.find((set) => !isCollectionSetUnlocked(set)));
+  const placedRoomRewards = $derived(roomPlacements.map((placement) => collectionRewards.find((reward) => reward.id === placement.rewardId)).filter((reward): reward is CollectionReward => Boolean(reward)));
+  const unplacedUnlockedRewards = $derived(unlockedRewards.filter((reward) => !isRewardPlaced(reward)));
+  const occupiedRoomPlacementCount = $derived(placedRoomRewards.length);
+  const activeKeepsakeSynergies = $derived(keepsakeSynergies.filter((synergy) => synergy.rewardIds.every((rewardId) => roomPlacements.some((placement) => placement.rewardId === rewardId))));
+  const roomPlacementSignalBonus = $derived(Math.min(3, occupiedRoomPlacementCount));
+  const roomSynergySignalBonus = $derived(activeKeepsakeSynergies.length);
+  const nextUnplacedReward = $derived(unplacedUnlockedRewards[0]);
   const characterIds = $derived(Array.from(new Set(incomingLetters.map((letter) => letter.characterId))));
   const completedCharacterIds = $derived(characterIds.filter((characterId) => characterReceivedCount(characterId) === characterLetters(characterId).length));
+  const activeVisitorTraces = $derived(listenerVisitTraces.filter((trace) => completedCharacterIds.includes(trace.characterId)).slice(0, 5));
+  const roomVisitorListenerBonus = $derived(Math.min(3, activeVisitorTraces.length));
   const selectedCharacterLetters = $derived(incomingLetters.filter((letter) => letter.characterId === selectedLetter.characterId));
   const selectedReceivedCharacterLetters = $derived(selectedCharacterLetters.filter((letter) => receivedLetterIds.includes(letter.id)));
   const selectedPackReceivedCount = $derived(storyPackReceivedCount(selectedStoryPack));
@@ -353,8 +465,12 @@
         ? `${unlockedStoryPacks[unlockedStoryPacks.length - 1].title} 수신 중`
         : `${currentBand.label} 대역 수신 중`
   );
+  const roomPlacementListenerBonus = $derived(occupiedRoomPlacementCount === 0 ? 0 : occupiedRoomPlacementCount + (isArchiveLampUnlocked ? 1 : 0));
+  const totalRoomSignalBonus = $derived(roomPlacementSignalBonus + roomSynergySignalBonus);
+  const totalRoomListenerBonus = $derived(roomPlacementListenerBonus + roomVisitorListenerBonus);
+  const currentRoomAmbience = $derived(roomAmbiences[activeKeepsakeSynergies.length > 0 && activeVisitorTraces.length > 0 ? 2 : occupiedRoomPlacementCount > 0 || activeVisitorTraces.length > 0 ? 1 : 0]);
   const sceneStatus = $derived(
-    `현재 방송국은 FM ${currentFrequency} ${currentBand.label} 대역에서 ${signalMood === "clear" ? "선명한" : signalMood === "warm" ? "따뜻한" : "희미한"} 신호로 송출 중입니다. 도시 창문 ${listenerLightCount}개가 켜져 있고 도시 활동 단계는 ${cityActivityLevel}입니다. 안테나는 Lv.${antennaLevel}, 송신기는 Lv.${transmitterLevel}입니다.${hasOfflineMail ? " 책상 위에는 밤샘 방송 리포트 사연 더미가 쌓여 있습니다." : ""}${isRooftopGardenUnlocked ? " 창가에는 옥상 정원 화분이 놓여 있습니다." : ""}${isRooftopGardenComplete ? " 화분에는 완결된 사연을 닮은 노란 꽃이 피었습니다." : ""}${unlockedRewards.length > 0 ? ` 선반에는 소장품 ${unlockedRewards.length}개가 놓여 있습니다.` : ""}${completedCharacterIds.length > 0 ? ` 벽 앨범에는 완성된 청취자 기록 ${completedCharacterIds.length}개가 꽂혀 있습니다.` : ""}${isArchiveLampUnlocked ? " 선반 아래 기억 보관함 조명이 켜져 있습니다." : ""}`
+    `현재 방송국은 FM ${currentFrequency} ${currentBand.label} 대역에서 ${signalMood === "clear" ? "선명한" : signalMood === "warm" ? "따뜻한" : "희미한"} 신호로 송출 중입니다. 도시 창문 ${listenerLightCount}개가 켜져 있고 도시 활동 단계는 ${cityActivityLevel}입니다. 안테나는 Lv.${antennaLevel}, 송신기는 Lv.${transmitterLevel}입니다.${hasOfflineMail ? " 책상 위에는 밤샘 방송 리포트 사연 더미가 쌓여 있습니다." : ""}${isRooftopGardenUnlocked ? " 창가에는 옥상 정원 화분이 놓여 있습니다." : ""}${isRooftopGardenComplete ? " 화분에는 완결된 사연을 닮은 노란 꽃이 피었습니다." : ""}${unlockedRewards.length > 0 ? ` 선반에는 소장품 ${unlockedRewards.length}개가 놓여 있습니다.` : ""}${currentRoomAmbience ? ` 방 분위기는 ${currentRoomAmbience.label}입니다.` : ""}${occupiedRoomPlacementCount > 0 ? ` 방송국 구역 ${occupiedRoomPlacementCount}곳에 소장품이 배치되어 새 사연 신호 +${totalRoomSignalBonus}, 청취자 +${totalRoomListenerBonus} 보너스를 줍니다.` : ""}${activeKeepsakeSynergies.length > 0 ? ` 소장품 동조 효과 ${activeKeepsakeSynergies.length}개가 켜져 있습니다.` : ""}${activeVisitorTraces.length > 0 ? ` 청취자 방문 흔적 ${activeVisitorTraces.length}개가 남아 있습니다.` : ""}${completedCharacterIds.length > 0 ? ` 벽 앨범에는 완성된 청취자 기록 ${completedCharacterIds.length}개가 꽂혀 있습니다.` : ""}${isArchiveLampUnlocked ? " 선반 아래 기억 보관함 조명이 켜져 있습니다." : ""}`
   );
 
   function savedNumber(value: unknown, fallback: number) {
@@ -367,6 +483,25 @@
 
   function normalizeBandId(value: unknown) {
     return typeof value === "string" && frequencyBands.some((band) => band.id === value) ? value : frequencyBands[0].id;
+  }
+
+  function createDefaultRoomPlacements() {
+    return roomPlacementSlots.map((slot) => ({ slotId: slot.id, rewardId: null }));
+  }
+
+  function normalizeRoomPlacements(value: unknown) {
+    const savedPlacements = Array.isArray(value) ? value : [];
+    const usedRewardIds = new Set<CollectionReward["id"]>();
+
+    return roomPlacementSlots.map((slot) => {
+      const savedPlacement = savedPlacements.find((placement) => placement?.slotId === slot.id);
+      const rewardId = savedPlacement?.rewardId;
+      const isValidReward = typeof rewardId === "string" && unlockedRewardIds.includes(rewardId) && !usedRewardIds.has(rewardId);
+      if (!isValidReward) return { slotId: slot.id, rewardId: null };
+
+      usedRewardIds.add(rewardId);
+      return { slotId: slot.id, rewardId };
+    });
   }
 
   function frequencyBandScore(letter: Letter, band = currentBand) {
@@ -515,8 +650,8 @@
     return {
       durationLabel: formatOfflineDuration(elapsedMinutes),
       elapsedMinutes,
-      listeners: Math.max(1, Math.floor(elapsedMinutes / 4) + transmitterLevel),
-      signal: Math.min(18, Math.max(1, Math.floor(elapsedMinutes / 12) + antennaLevel)),
+      listeners: Math.max(1, Math.floor(elapsedMinutes / 4) + transmitterLevel + totalRoomListenerBonus),
+      signal: Math.min(18, Math.max(1, Math.floor(elapsedMinutes / 12) + antennaLevel + totalRoomSignalBonus)),
       reputation: Math.max(1, Math.floor(elapsedMinutes / 45)),
       stories: Math.max(1, Math.floor(elapsedMinutes / 60)),
       letters: queuedLetters
@@ -556,6 +691,35 @@
 
   function isRewardUnlocked(reward: CollectionReward) {
     return unlockedRewardIds.includes(reward.id);
+  }
+
+  function roomPlacementSlotReward(slot: RoomPlacementSlot) {
+    const placement = roomPlacements.find((roomPlacement) => roomPlacement.slotId === slot.id);
+    return collectionRewards.find((reward) => reward.id === placement?.rewardId) ?? null;
+  }
+
+  function isRewardPlaced(reward: CollectionReward) {
+    return roomPlacements.some((placement) => placement.rewardId === reward.id);
+  }
+
+  function placeReward(slot: RoomPlacementSlot, reward: CollectionReward) {
+    if (!isRewardUnlocked(reward)) return;
+
+    roomPlacements = roomPlacements.map((placement) => ({
+      slotId: placement.slotId,
+      rewardId: placement.slotId === slot.id ? reward.id : placement.rewardId === reward.id ? null : placement.rewardId
+    }));
+    stationLog = `${reward.title} 소장품을 ${slot.title}에 배치했습니다. 방송국 장면이 조금 더 채워졌습니다.`;
+    saveStationState();
+  }
+
+  function clearRoomPlacement(slot: RoomPlacementSlot) {
+    const reward = roomPlacementSlotReward(slot);
+    if (!reward) return;
+
+    roomPlacements = roomPlacements.map((placement) => (placement.slotId === slot.id ? { slotId: placement.slotId, rewardId: null } : placement));
+    stationLog = `${slot.title}에서 ${reward.title} 소장품을 잠시 치웠습니다.`;
+    saveStationState();
   }
 
   function rewardProgress(reward: CollectionReward) {
@@ -650,6 +814,7 @@
         unlockedRewardIds,
         currentBandId,
         unlockedCollectionSetIds,
+        roomPlacements,
         letters,
         offlineReport,
         lastSavedAt: Date.now()
@@ -665,8 +830,8 @@
     selectedLetter = next;
     reputation += 1;
     stories += 1;
-    signal = Math.min(100, signal + 4 + antennaLevel);
-    listeners += 2 + transmitterLevel;
+    signal = Math.min(100, signal + 4 + antennaLevel + totalRoomSignalBonus);
+    listeners += 2 + transmitterLevel + totalRoomListenerBonus;
     stationLog = `FM ${currentFrequency} ${currentBand.label} 대역에서 ${next.author}의 사연이 도착했습니다. DJ 코멘트: ${next.djComment}`;
   }
 
@@ -702,6 +867,7 @@
     unlockedRewardIds = [];
     currentBandId = frequencyBands[0].id;
     unlockedCollectionSetIds = [];
+    roomPlacements = createDefaultRoomPlacements();
     unlockedPackNotice = null;
     completedPackNotice = null;
     offlineReport = null;
@@ -751,6 +917,7 @@
           unlockedCollectionSetIds = Array.isArray(state.unlockedCollectionSetIds)
             ? Array.from(new Set([...state.unlockedCollectionSetIds.filter((id: string) => collectionSets.some((set) => set.id === id)), ...earnedCollectionSetIds]))
             : earnedCollectionSetIds;
+          roomPlacements = normalizeRoomPlacements(state.roomPlacements);
           selectedLetter = letters[0] ?? incomingLetters[0];
 
           const lastSavedAt = savedNumber(state.lastSavedAt, Date.now());
@@ -783,7 +950,7 @@
 
 <main class="station-shell" style={`--band-accent: ${currentBand.accent};`} aria-label="Night Radio Station">
   <section
-    class={`pixel-scene signal-${signalMood} ${currentBand.sceneClass} city-level-${cityActivityLevel} echo-${activeCharacterEcho}${hasOfflineMail ? " has-offline-mail" : ""}${isRooftopGardenUnlocked ? " has-rooftop" : ""}${isRooftopGardenComplete ? " rooftop-complete" : ""}${isArchiveLampUnlocked ? " has-archive-lamp" : ""}`}
+    class={`pixel-scene signal-${signalMood} ${currentBand.sceneClass} ${currentRoomAmbience.sceneClass} city-level-${cityActivityLevel} echo-${activeCharacterEcho}${hasOfflineMail ? " has-offline-mail" : ""}${isRooftopGardenUnlocked ? " has-rooftop" : ""}${isRooftopGardenComplete ? " rooftop-complete" : ""}${isArchiveLampUnlocked ? " has-archive-lamp" : ""}${occupiedRoomPlacementCount > 0 ? " has-placements" : ""}${activeKeepsakeSynergies.length > 0 ? " has-synergy" : ""}${activeVisitorTraces.length > 0 ? " has-visitor-traces" : ""}`}
     style={`--signal-pulse: ${scenePulse}; --scene-glow: ${sceneGlow}; --light-opacity: ${lightOpacity}; --antenna-reach: ${antennaReach}px; --listener-lights: ${listenerLightCount}; --band-accent: ${currentBand.accent};`}
     aria-labelledby="station-title"
     aria-describedby="scene-status"
@@ -825,6 +992,13 @@
           <span class:active={characterReceivedCount(characterId) > 0} class:complete={completedCharacterIds.includes(characterId)}></span>
         {/each}
       </div>
+      {#if activeVisitorTraces.length > 0}
+        <div class="visitor-notes" aria-hidden="true">
+          {#each activeVisitorTraces as trace (trace.characterId)}
+            <span class={trace.sceneClass}></span>
+          {/each}
+        </div>
+      {/if}
       <div class="shelf" aria-hidden="true">
         {#if unlockedRewards.length === 0}
           <span class="souvenir placeholder"></span><span class="souvenir placeholder"></span><span class="souvenir placeholder"></span>
@@ -833,6 +1007,18 @@
             <span class={`souvenir ${reward.souvenirClass}`}></span>
           {/each}
         {/if}
+      </div>
+      <div class="placement-stage" aria-hidden="true">
+        {#each roomPlacementSlots as slot (slot.id)}
+          <div class={`room-keepsake ${slot.sceneClass}`} class:filled={Boolean(roomPlacementSlotReward(slot))}>
+            {#if roomPlacementSlotReward(slot)}
+              <span class={`souvenir ${roomPlacementSlotReward(slot)?.souvenirClass}`}></span>
+            {/if}
+          </div>
+        {/each}
+        {#each activeKeepsakeSynergies as synergy (synergy.id)}
+          <span class={`synergy-glow ${synergy.sceneClass}`}></span>
+        {/each}
       </div>
       <div class="host" role="img" aria-label="심야 DJ 캐릭터">
         <div class="host-head"></div>
@@ -1036,6 +1222,92 @@
       {/if}
     </div>
 
+    <section class="ambience-panel" aria-labelledby="ambience-title">
+      <div class="ambience-header">
+        <div>
+          <p class="eyebrow">alive broadcast room</p>
+          <h2 id="ambience-title">{currentRoomAmbience.label}</h2>
+        </div>
+        <strong>신호 +{totalRoomSignalBonus} · 청취자 +{totalRoomListenerBonus}</strong>
+      </div>
+      <p>{currentRoomAmbience.description}</p>
+      <div class="ambience-list" role="list" aria-label="방송국 생동감 효과">
+        {#each activeKeepsakeSynergies as synergy (synergy.id)}
+          <div class="ambience-chip" role="listitem">
+            <span>소장품 동조</span>
+            <strong>{synergy.title}</strong>
+            <small>{synergy.description}</small>
+          </div>
+        {/each}
+        {#each activeVisitorTraces as trace (trace.characterId)}
+          <div class="ambience-chip" role="listitem">
+            <span>방문 흔적</span>
+            <strong>{trace.title}</strong>
+            <small>{trace.description}</small>
+          </div>
+        {/each}
+        {#if activeKeepsakeSynergies.length === 0 && activeVisitorTraces.length === 0}
+          <div class="ambience-chip" role="listitem">
+            <span>다음 변화</span>
+            <strong>소장품 배치와 청취자 관계 완성</strong>
+            <small>방송국에 놓인 물건과 완성된 청취자 기록이 늘면 방 분위기가 살아납니다.</small>
+          </div>
+        {/if}
+      </div>
+    </section>
+
+    <section class="placement-panel" aria-labelledby="placement-title">
+      <div class="placement-header">
+        <div>
+          <p class="eyebrow">broadcast room layout</p>
+          <h2 id="placement-title">방송국 소장품 배치</h2>
+        </div>
+        <strong>{occupiedRoomPlacementCount}/{roomPlacementSlots.length}</strong>
+      </div>
+      <p>
+        배치 보너스: 새 사연 신호 +{roomPlacementSignalBonus}, 청취자 +{roomPlacementListenerBonus}
+        {#if nextUnplacedReward}
+          · 다음 배치 후보: {nextUnplacedReward.title}
+        {:else if unlockedRewards.length === 0}
+          · 사연 묶음 완성 후 소장품을 배치할 수 있습니다.
+        {:else}
+          · 해금된 소장품이 모두 방송국에 놓였습니다.
+        {/if}
+      </p>
+      <div class="placement-grid" role="list" aria-label="소장품 배치 슬롯">
+        {#each roomPlacementSlots as slot (slot.id)}
+          <div class:filled={Boolean(roomPlacementSlotReward(slot))} class="placement-card" role="listitem">
+            <div>
+              <span>{slot.title}</span>
+              <strong>{roomPlacementSlotReward(slot)?.title ?? slot.emptyLabel}</strong>
+            </div>
+            <p>{roomPlacementSlotReward(slot)?.description ?? slot.description}</p>
+            <div class="placement-actions" aria-label={`${slot.title} 소장품 선택`}>
+              {#if unlockedRewards.length === 0}
+                <small>아직 배치 가능한 소장품이 없습니다.</small>
+              {:else}
+                {#each unlockedRewards as reward (reward.id)}
+                  <button
+                    type="button"
+                    class:active={roomPlacementSlotReward(slot)?.id === reward.id}
+                    aria-pressed={roomPlacementSlotReward(slot)?.id === reward.id}
+                    disabled={roomPlacementSlotReward(slot)?.id === reward.id}
+                    onclick={() => placeReward(slot, reward)}
+                  >
+                    <span>{isRewardPlaced(reward) ? "이동" : "배치"}</span>
+                    {reward.title}
+                  </button>
+                {/each}
+                {#if roomPlacementSlotReward(slot)}
+                  <button type="button" class="clear-placement" onclick={() => clearRoomPlacement(slot)}>비우기</button>
+                {/if}
+              {/if}
+            </div>
+          </div>
+        {/each}
+      </div>
+    </section>
+
     <div class="set-gallery" role="list" aria-label="소장품 세트 도감">
       {#each collectionSets as set (set.id)}
         <div class:complete={isCollectionSetUnlocked(set)} class="set-card" role="listitem">
@@ -1219,6 +1491,27 @@
 
   .pixel-scene.signal-clear .scene-sky {
     background: linear-gradient(#17234c 0 42%, #3d2e58 42% 100%);
+  }
+
+  .pixel-scene.ambience-warm .studio-room {
+    background:
+      linear-gradient(90deg, rgba(249, 223, 143, 0.08) 0 4px, transparent 4px 100%),
+      linear-gradient(#422c45 0 66%, #2f2135 66% 100%);
+  }
+
+  .pixel-scene.ambience-alive .studio-room {
+    background:
+      linear-gradient(90deg, rgba(249, 223, 143, 0.1) 0 4px, transparent 4px 100%),
+      radial-gradient(circle at 76% 44%, rgba(249, 223, 143, 0.2), transparent 58px),
+      linear-gradient(#48304c 0 66%, #32233a 66% 100%);
+  }
+
+  .pixel-scene.has-synergy .wall-light {
+    box-shadow: 0 0 0 4px #4b3149, 0 0 calc(var(--scene-glow) + 12px) #f9df8f;
+  }
+
+  .pixel-scene.has-visitor-traces .album-board {
+    box-shadow: 0 0 12px rgba(158, 208, 188, 0.42);
   }
 
   .pixel-scene.band-rooftop .scene-sky {
@@ -1624,6 +1917,31 @@
     box-shadow: 0 0 10px rgba(249, 223, 143, 0.8);
   }
 
+  .visitor-notes {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .visitor-notes span {
+    position: absolute;
+    width: 12px;
+    height: 14px;
+    border: 2px solid #442638;
+    background: #f7e9c7;
+    box-shadow: 0 3px 0 #6b3f55;
+  }
+
+  .visitor-notes .trace-taxi { top: 154px; left: 28px; background: #f9df8f; }
+  .visitor-notes .trace-leaf { top: 70px; right: 78px; background: #9ed0bc; }
+  .visitor-notes .trace-hidden { top: 126px; left: 82px; background: #b99cff; }
+  .visitor-notes .trace-store { right: 58px; bottom: 48px; background: #f1a45f; }
+  .visitor-notes .trace-bridge { top: 40px; right: 34px; background: #ffcf91; }
+  .visitor-notes .trace-water { top: 92px; right: 44px; background: #8bd7a4; }
+  .visitor-notes .trace-ribbon { top: 78px; right: 116px; background: #f9df8f; }
+  .visitor-notes .trace-screw { right: 128px; bottom: 66px; background: #c7a77b; }
+  .visitor-notes .trace-note { top: 150px; left: 66px; background: #ead7ad; }
+
   .shelf {
     position: absolute;
     top: 84px;
@@ -1692,6 +2010,78 @@
     content: "";
     background: #f9df8f;
     box-shadow: 0 0 var(--scene-glow) #f1a45f;
+  }
+
+  .placement-stage {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .room-keepsake {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(75, 49, 73, 0.72);
+    background: rgba(21, 17, 29, 0.48);
+  }
+
+  .room-keepsake.filled {
+    border-color: #f9df8f;
+    background: rgba(249, 223, 143, 0.1);
+    box-shadow: 0 0 12px rgba(249, 223, 143, 0.36);
+  }
+
+  .room-keepsake .souvenir {
+    position: absolute;
+    bottom: 2px;
+    left: 4px;
+    margin: 0;
+    transform: none;
+  }
+
+  .room-keepsake .souvenir.ticket {
+    bottom: 8px;
+    left: 2px;
+  }
+
+  .room-keepsake .souvenir.flower {
+    bottom: 2px;
+    left: 7px;
+  }
+
+  .room-keepsake.desk-slot {
+    right: 162px;
+    bottom: 50px;
+  }
+
+  .room-keepsake.shelf-slot {
+    top: 102px;
+    right: 72px;
+  }
+
+  .room-keepsake.window-slot {
+    top: 72px;
+    right: 126px;
+  }
+
+  .synergy-glow {
+    position: absolute;
+    width: 58px;
+    height: 18px;
+    background: #f9df8f;
+    opacity: 0.72;
+    box-shadow: 0 0 calc(var(--scene-glow) + 16px) rgba(249, 223, 143, 0.86);
+    animation: light-breathe 2.4s steps(3, end) infinite;
+  }
+
+  .synergy-glow.synergy-dawn {
+    top: 104px;
+    right: 54px;
+  }
+
+  .pixel-scene.has-placements .studio-room {
+    box-shadow: inset 0 0 0 3px rgba(249, 223, 143, 0.08);
   }
 
   .host {
@@ -2104,6 +2494,9 @@
   .letter-list,
   .pack-status,
   .pack-collection,
+  .ambience-list,
+  .placement-grid,
+  .placement-actions,
   .set-gallery,
   .reward-gallery,
   .character-gallery {
@@ -2113,6 +2506,7 @@
 
   .actions button,
   .offline-actions button,
+  .placement-actions button,
   .letter-list button,
   .reset-button {
     border: 3px solid #6b3f55;
@@ -2147,6 +2541,8 @@
   .reward-notice,
   .set-notice,
   .collection-summary,
+  .ambience-panel,
+  .placement-panel,
   .set-gallery,
   .reward-gallery,
   .character-gallery,
@@ -2161,6 +2557,10 @@
   .reward-notice,
   .set-notice,
   .collection-summary,
+  .ambience-panel,
+  .ambience-chip,
+  .placement-panel,
+  .placement-card,
   .pack-card,
   .set-card,
   .reward-card,
@@ -2259,6 +2659,9 @@
   }
 
   .collection-summary div,
+  .ambience-header,
+  .placement-header,
+  .placement-card > div,
   .pack-card div,
   .set-card div,
   .reward-card div,
@@ -2267,6 +2670,108 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.45rem;
+  }
+
+  .ambience-panel {
+    border-color: #f9df8f;
+    background:
+      radial-gradient(circle at 86% 18%, rgba(249, 223, 143, 0.16), transparent 52px),
+      linear-gradient(90deg, rgba(185, 156, 255, 0.1), transparent 62%),
+      #15111d;
+  }
+
+  .ambience-header h2,
+  .placement-header h2 {
+    margin-bottom: 0;
+  }
+
+  .ambience-header strong {
+    color: #ffcf91;
+    font-size: 0.72rem;
+    text-align: right;
+  }
+
+  .ambience-panel > p {
+    margin: 0.3rem 0 0.45rem;
+  }
+
+  .ambience-chip {
+    background:
+      linear-gradient(90deg, rgba(249, 223, 143, 0.08), transparent 58%),
+      #20172a;
+  }
+
+  .ambience-chip span,
+  .ambience-chip strong,
+  .ambience-chip small {
+    display: block;
+  }
+
+  .ambience-chip span {
+    color: #9ed0bc;
+  }
+
+  .ambience-chip strong {
+    color: #ffcf91;
+  }
+
+  .placement-panel {
+    background:
+      linear-gradient(90deg, rgba(79, 143, 128, 0.12), transparent 62%),
+      #15111d;
+  }
+
+  .placement-header h2 {
+    margin-bottom: 0;
+  }
+
+  .placement-header strong,
+  .placement-card.filled strong {
+    color: #ffcf91;
+  }
+
+  .placement-panel > p,
+  .placement-card p {
+    margin: 0.3rem 0 0.45rem;
+  }
+
+  .placement-card.filled {
+    border-color: #f9df8f;
+    box-shadow: inset 0 0 0 2px rgba(79, 143, 128, 0.45);
+  }
+
+  .placement-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .placement-actions button {
+    padding: 0.4rem;
+    font-size: 0.68rem;
+  }
+
+  .placement-actions button.active {
+    border-color: #f9df8f;
+    color: #ffcf91;
+    background: #3a263f;
+  }
+
+  .placement-actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.68;
+  }
+
+  .placement-actions span,
+  .placement-actions small {
+    display: block;
+  }
+
+  .placement-actions span {
+    color: #9ed0bc;
+    font-size: 0.62rem;
+  }
+
+  .clear-placement {
+    color: #c7a77b;
   }
 
   .collection-summary strong {
@@ -2311,6 +2816,7 @@
 
   .actions button:hover:not(:disabled),
   .offline-actions button:hover,
+  .placement-actions button:hover:not(:disabled),
   .frequency-options button:hover,
   .letter-list button:hover,
   .letter-list button.active,
@@ -2478,6 +2984,7 @@
     .radio-wave,
     .letter-flag,
     .offline-mail-stack,
+    .synergy-glow,
     .on-air span {
       animation: none;
     }
