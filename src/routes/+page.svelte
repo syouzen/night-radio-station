@@ -23,6 +23,9 @@
     subject: string;
     body: string;
     mood: string;
+    characterId: string;
+    sequence: string;
+    djComment: string;
   };
 
   const storyPacks: StoryPack[] = [
@@ -52,7 +55,10 @@
       author: "택시 기사 민우",
       subject: "오늘도 03:12에 같은 손님을 태웠습니다",
       body: "목적지는 늘 비어 있는 극장입니다. 요금은 낡은 동전 세 개. 내일도 같은 시간에 틀어주세요.",
-      mood: "불안"
+      mood: "불안",
+      characterId: "taxi-minu",
+      sequence: "첫 운행",
+      djComment: "민우 님, 같은 시간에 같은 길을 도는 밤도 언젠가 목적지를 바꿉니다. 오늘은 극장 앞까지 같이 켜둘게요."
     },
     {
       id: "first-night-rooftop-haerin",
@@ -61,7 +67,10 @@
       author: "옥상 정원사 해린",
       subject: "전파가 식물 잎을 흔들어요",
       body: "당신 방송이 나오면 죽은 줄 알았던 달맞이꽃이 다시 폅니다. 주파수를 바꾸지 말아 주세요.",
-      mood: "따뜻함"
+      mood: "따뜻함",
+      characterId: "gardener-haerin",
+      sequence: "첫 발아",
+      djComment: "해린 님, 오늘 주파수는 그대로 둘게요. 달맞이꽃이 듣는 밤이라면 우리도 조용히 볼륨을 낮추겠습니다."
     },
     {
       id: "first-night-hidden-city",
@@ -70,7 +79,10 @@
       author: "익명 청취자",
       subject: "97.3 아래에 다른 도시가 있습니다",
       body: "잡음 사이로 들리는 종소리를 따라가면, 지도에 없는 정류장 이름이 반복됩니다. 당신도 들었나요?",
-      mood: "미스터리"
+      mood: "미스터리",
+      characterId: "hidden-city-listener",
+      sequence: "첫 제보",
+      djComment: "익명 청취자님, 종소리는 아직 희미합니다. 대신 잡음을 조금 더 넓혀서 그 정류장 이름을 받아보겠습니다."
     },
     {
       id: "first-night-store-jun",
@@ -79,7 +91,10 @@
       author: "편의점 야간 알바 준",
       subject: "손님 없는 시간에만 광고가 들립니다",
       body: "분명 방송을 껐는데도 카운터 라디오에서 누군가 잃어버린 물건을 사고 있습니다.",
-      mood: "기묘함"
+      mood: "기묘함",
+      characterId: "night-store-jun",
+      sequence: "첫 야간 근무",
+      djComment: "준 님, 꺼진 라디오까지 듣는 손님이라면 분명 잃어버린 물건보다 잃어버린 시간을 찾는 중일 겁니다."
     },
     {
       id: "first-night-bridge-sora",
@@ -88,7 +103,10 @@
       author: "늦은 귀가의 소라",
       subject: "다리 위 가로등이 하나씩 켜졌어요",
       body: "사연을 보낸 뒤 집까지 가는 길이 덜 무서웠습니다. 이 도시는 아직 깨어 있네요.",
-      mood: "안도"
+      mood: "안도",
+      characterId: "bridge-sora",
+      sequence: "첫 귀가",
+      djComment: "소라 님, 집까지 닿는 가로등 하나를 더 켜둔 셈으로 생각할게요. 다음 다리도 같이 건너요."
     },
     {
       id: "rooftop-garden-dalsoo",
@@ -97,7 +115,10 @@
       author: "옥상 관리인 달수",
       subject: "물탱크 옆 작은 화분을 맡았습니다",
       body: "퇴근길마다 한 컵씩 물을 줍니다. 방송에서 비 소리가 나오면 잎이 조금 더 곧게 서는 것 같습니다.",
-      mood: "잔잔함"
+      mood: "잔잔함",
+      characterId: "rooftop-dalsoo",
+      sequence: "첫 물주기",
+      djComment: "달수 님, 오늘 예보에는 비가 없지만 방송국에서 작은 빗소리를 섞어 보내겠습니다."
     },
     {
       id: "rooftop-garden-mira",
@@ -106,7 +127,10 @@
       author: "새벽 배송원 미라",
       subject: "옥상 난간에 매달린 리본을 봤어요",
       body: "매일 다른 색으로 바뀌는 리본입니다. 오늘은 노란색이었고, 이상하게 피곤함이 덜했습니다.",
-      mood: "위로"
+      mood: "위로",
+      characterId: "delivery-mira",
+      sequence: "첫 리본",
+      djComment: "미라 님, 노란 리본은 새벽에도 도착하는 햇빛일지 모릅니다. 다음 배송길에도 주파수를 열어둘게요."
     },
     {
       id: "rooftop-garden-seoho",
@@ -115,7 +139,10 @@
       author: "라디오 수리공 서호",
       subject: "낡은 스피커에서 흙냄새가 납니다",
       body: "주파수를 맞추면 잡음 사이로 분갈이하는 소리가 들립니다. 고장이라기보다 누군가 돌보고 있는 소리 같습니다.",
-      mood: "기묘한 평온"
+      mood: "기묘한 평온",
+      characterId: "repair-seoho",
+      sequence: "첫 수리",
+      djComment: "서호 님, 고장이 아니라면 다행입니다. 밤에도 무언가 자라고 있다는 증거니까요."
     },
     {
       id: "rooftop-garden-yeon",
@@ -124,7 +151,22 @@
       author: "잠 못 드는 연",
       subject: "안테나 그림자가 화단까지 닿았어요",
       body: "그 그림자 아래 앉아 있으면 오늘 못 한 말을 내일 해도 괜찮을 것 같습니다. 고마워요, 계속 틀어줘서.",
-      mood: "회복"
+      mood: "회복",
+      characterId: "sleepless-yeon",
+      sequence: "첫 그림자",
+      djComment: "연 님, 내일 해도 되는 말은 오늘 밤 우리가 지켜둘게요. 안테나 그림자 아래에서 잠시 쉬어가세요."
+    },
+    {
+      id: "rooftop-garden-haerin-bloom",
+      packId: "rooftop-garden",
+      order: 5,
+      author: "옥상 정원사 해린",
+      subject: "달맞이꽃이 두 번째 편지를 피웠어요",
+      body: "처음 사연을 보낸 뒤 화분을 옥상으로 옮겼습니다. 오늘은 꽃잎 안쪽에 작은 주파수 번호가 보였습니다.",
+      mood: "연결",
+      characterId: "gardener-haerin",
+      sequence: "두 번째 발아",
+      djComment: "해린 님, 첫 밤의 꽃이 옥상까지 올라왔군요. 그 번호를 따라가면 다음 사연도 피어날 겁니다."
     }
   ];
 
@@ -136,9 +178,12 @@
   let antennaLevel = $state(1);
   let transmitterLevel = $state(1);
   let receivedLetterCount = $state(1);
+  let receivedLetterIds = $state<Letter["id"][]>([incomingLetters[0].id]);
   let unlockedStoryPackIds = $state<StoryPack["id"][]>([storyPacks[0].id]);
   let announcedStoryPackIds = $state<StoryPack["id"][]>([storyPacks[0].id]);
+  let completedStoryPackIds = $state<StoryPack["id"][]>([]);
   let unlockedPackNotice = $state<StoryPack | null>(null);
+  let completedPackNotice = $state<StoryPack | null>(null);
   let hasLoadedState = $state(false);
   let letters = $state<Letter[]>([incomingLetters[0]]);
   let selectedLetter = $state<Letter>(incomingLetters[0]);
@@ -152,6 +197,11 @@
   const nextStoryPackProgress = $derived(nextStoryPack ? storyPackProgress(nextStoryPack) : 100);
   const availableLetters = $derived(incomingLetters.filter((letter) => unlockedStoryPackIds.includes(letter.packId)));
   const selectedStoryPack = $derived(storyPacks.find((pack) => pack.id === selectedLetter.packId) ?? storyPacks[0]);
+  const completedStoryPacks = $derived(storyPacks.filter((pack) => isStoryPackComplete(pack)));
+  const selectedCharacterLetters = $derived(incomingLetters.filter((letter) => letter.characterId === selectedLetter.characterId));
+  const selectedReceivedCharacterLetters = $derived(selectedCharacterLetters.filter((letter) => receivedLetterIds.includes(letter.id)));
+  const selectedPackReceivedCount = $derived(storyPackReceivedCount(selectedStoryPack));
+  const selectedPackLetterCount = $derived(storyPackLetters(selectedStoryPack).length);
   const nextLetterIn = $derived(18 - (secondsOnline % 18));
   const nextLetterProgress = $derived(Math.round(((18 - nextLetterIn) / 18) * 100));
   const antennaCost = $derived(antennaLevel * 3);
@@ -167,8 +217,10 @@
   const sceneGlow = $derived(`${Math.round(14 + scenePulse * 26)}px`);
   const lightOpacity = $derived((0.38 + scenePulse * 0.48).toFixed(2));
   const antennaReach = $derived(Math.min(62, 28 + antennaLevel * 8));
+  const isRooftopGardenUnlocked = $derived(unlockedStoryPackIds.includes("rooftop-garden"));
+  const isRooftopGardenComplete = $derived(completedStoryPackIds.includes("rooftop-garden"));
   const sceneStatus = $derived(
-    `현재 방송국은 ${signalMood === "clear" ? "선명한" : signalMood === "warm" ? "따뜻한" : "희미한"} 신호로 송출 중입니다. 도시 창문 ${listenerLightCount}개가 켜져 있고 안테나는 Lv.${antennaLevel}, 송신기는 Lv.${transmitterLevel}입니다.`
+    `현재 방송국은 ${signalMood === "clear" ? "선명한" : signalMood === "warm" ? "따뜻한" : "희미한"} 신호로 송출 중입니다. 도시 창문 ${listenerLightCount}개가 켜져 있고 안테나는 Lv.${antennaLevel}, 송신기는 Lv.${transmitterLevel}입니다.${isRooftopGardenUnlocked ? " 창가에는 옥상 정원 화분이 놓여 있습니다." : ""}${isRooftopGardenComplete ? " 화분에는 완결된 사연을 닮은 노란 꽃이 피었습니다." : ""}`
   );
 
   function savedNumber(value: unknown, fallback: number) {
@@ -187,6 +239,18 @@
     announcedStoryPackIds = [...announcedStoryPackIds, freshPack.id];
     unlockedPackNotice = freshPack;
     stationLog = `${freshPack.title} 사연 묶음이 열렸습니다. 새 밤의 편지가 편성표에 들어왔습니다.`;
+    saveStationState();
+  });
+
+  $effect(() => {
+    if (!hasLoadedState) return;
+
+    const completedPack = storyPacks.find((pack) => isStoryPackComplete(pack) && !completedStoryPackIds.includes(pack.id));
+    if (!completedPack) return;
+
+    completedStoryPackIds = [...completedStoryPackIds, completedPack.id];
+    completedPackNotice = completedPack;
+    stationLog = `${completedPack.title} 사연 묶음이 완성되었습니다. DJ가 마지막 코멘트를 편성표에 남겼습니다.`;
     saveStationState();
   });
 
@@ -209,6 +273,37 @@
     return Math.round((listenerProgress + signalProgress + storyProgress) / 3);
   }
 
+  function orderedLetters(availablePackIds = unlockedStoryPackIds) {
+    return incomingLetters
+      .filter((letter) => availablePackIds.includes(letter.packId))
+      .sort((a, b) => storyPacks.findIndex((pack) => pack.id === a.packId) - storyPacks.findIndex((pack) => pack.id === b.packId) || a.order - b.order);
+  }
+
+  function knownLetterIds(ids: Letter["id"][]) {
+    return Array.from(new Set(ids.filter((id) => incomingLetters.some((letter) => letter.id === id))));
+  }
+
+  function migratedReceivedLetterIds(count: number, visibleLetters: Letter[], availablePackIds = unlockedStoryPackIds) {
+    return knownLetterIds([...orderedLetters(availablePackIds).slice(0, count).map((letter) => letter.id), ...visibleLetters.map((letter) => letter.id)]);
+  }
+
+  function nextAvailableLetter() {
+    return orderedLetters().find((letter) => !receivedLetterIds.includes(letter.id)) ?? availableLetters[receivedLetterCount % availableLetters.length] ?? incomingLetters[0];
+  }
+
+  function storyPackLetters(pack: StoryPack) {
+    return incomingLetters.filter((letter) => letter.packId === pack.id);
+  }
+
+  function storyPackReceivedCount(pack: StoryPack) {
+    return storyPackLetters(pack).filter((letter) => receivedLetterIds.includes(letter.id)).length;
+  }
+
+  function isStoryPackComplete(pack: StoryPack) {
+    const packLetters = storyPackLetters(pack);
+    return packLetters.length > 0 && packLetters.every((letter) => receivedLetterIds.includes(letter.id));
+  }
+
   function saveStationState() {
     if (!browser) return;
 
@@ -223,23 +318,26 @@
         antennaLevel,
         transmitterLevel,
         receivedLetterCount,
+        receivedLetterIds,
         unlockedStoryPackIds,
         announcedStoryPackIds,
+        completedStoryPackIds,
         letters
       })
     );
   }
 
   function addLetter() {
-    const next = availableLetters[receivedLetterCount % availableLetters.length] ?? incomingLetters[0];
+    const next = nextAvailableLetter();
     receivedLetterCount += 1;
+    if (!receivedLetterIds.includes(next.id)) receivedLetterIds = [...receivedLetterIds, next.id];
     letters = [next, ...letters].slice(0, 6);
     selectedLetter = next;
     reputation += 1;
     stories += 1;
     signal = Math.min(100, signal + 4 + antennaLevel);
     listeners += 2 + transmitterLevel;
-    stationLog = `${next.author}의 사연이 도착했습니다. 평판과 이야기가 1씩 늘었습니다.`;
+    stationLog = `${next.author}의 사연이 도착했습니다. DJ 코멘트: ${next.djComment}`;
   }
 
   function tuneAntenna() {
@@ -267,9 +365,12 @@
     antennaLevel = 1;
     transmitterLevel = 1;
     receivedLetterCount = 1;
+    receivedLetterIds = [incomingLetters[0].id];
     unlockedStoryPackIds = [storyPacks[0].id];
     announcedStoryPackIds = [storyPacks[0].id];
+    completedStoryPackIds = [];
     unlockedPackNotice = null;
+    completedPackNotice = null;
     letters = [incomingLetters[0]];
     selectedLetter = incomingLetters[0];
     stationLog = "방송국 기록을 지우고 첫 사연부터 다시 송출합니다.";
@@ -293,10 +394,17 @@
         unlockedStoryPackIds = Array.isArray(state.unlockedStoryPackIds)
           ? state.unlockedStoryPackIds.filter((id: string) => storyPacks.some((pack) => pack.id === id))
           : storyPacks.filter(hasStoryPackRequirements).map((pack) => pack.id);
+        receivedLetterIds = Array.isArray(state.receivedLetterIds)
+          ? knownLetterIds(state.receivedLetterIds)
+          : migratedReceivedLetterIds(receivedLetterCount, letters, unlockedStoryPackIds);
+        if (!receivedLetterIds.includes(incomingLetters[0].id)) receivedLetterIds = [incomingLetters[0].id, ...receivedLetterIds];
         if (!unlockedStoryPackIds.includes(storyPacks[0].id)) unlockedStoryPackIds = [storyPacks[0].id, ...unlockedStoryPackIds];
         announcedStoryPackIds = Array.isArray(state.announcedStoryPackIds)
           ? state.announcedStoryPackIds.filter((id: string) => storyPacks.some((pack) => pack.id === id))
           : unlockedStoryPackIds;
+        completedStoryPackIds = Array.isArray(state.completedStoryPackIds)
+          ? state.completedStoryPackIds.filter((id: string) => storyPacks.some((pack) => pack.id === id))
+          : storyPacks.filter(isStoryPackComplete).map((pack) => pack.id);
         selectedLetter = letters[0] ?? incomingLetters[0];
       }
     }
@@ -321,7 +429,7 @@
 
 <main class="station-shell" aria-label="Night Radio Station">
   <section
-    class={`pixel-scene signal-${signalMood}`}
+    class={`pixel-scene signal-${signalMood}${isRooftopGardenUnlocked ? " has-rooftop" : ""}${isRooftopGardenComplete ? " rooftop-complete" : ""}`}
     style={`--signal-pulse: ${scenePulse}; --scene-glow: ${sceneGlow}; --light-opacity: ${lightOpacity}; --antenna-reach: ${antennaReach}px; --listener-lights: ${listenerLightCount};`}
     aria-labelledby="station-title"
     aria-describedby="scene-status"
@@ -347,6 +455,11 @@
       <div class="window" aria-hidden="true">
         <span></span><span></span><span></span><span></span><span></span><span></span>
       </div>
+      {#if isRooftopGardenUnlocked}
+        <div class="rooftop-pot" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+      {/if}
       <div class="poster" aria-hidden="true">FM</div>
       <div class="shelf" aria-hidden="true">
         <span></span><span></span><span></span>
@@ -464,16 +577,24 @@
       </div>
     {/if}
 
+    {#if completedPackNotice}
+      <div class="completion-notice" role="status" aria-live="polite">
+        <span>사연 묶음 완성</span>
+        <strong>{completedPackNotice.title}</strong>
+        <small>이 묶음의 모든 사연이 방송 기록에 남았습니다.</small>
+      </div>
+    {/if}
+
     <div class="pack-collection" role="list" aria-label="사연 묶음 보관함">
       {#each storyPacks as pack (pack.id)}
-        <div class:unlocked={isStoryPackUnlocked(pack)} class="pack-card" role="listitem">
+        <div class:unlocked={isStoryPackUnlocked(pack)} class:complete={isStoryPackComplete(pack)} class="pack-card" role="listitem">
           <div>
-            <span>{isStoryPackUnlocked(pack) ? "열림" : "잠김"}</span>
+            <span>{isStoryPackComplete(pack) ? "완성" : isStoryPackUnlocked(pack) ? "열림" : "잠김"}</span>
             <strong>{pack.title}</strong>
           </div>
           <p>{pack.description}</p>
-          <small>{isStoryPackUnlocked(pack) ? `${pack.tone} 사연 수신 가능` : pack.unlockHint}</small>
-          <span class="progress-track" aria-hidden="true"><span style={`width: ${storyPackProgress(pack)}%`}></span></span>
+          <small>{isStoryPackUnlocked(pack) ? `${storyPackReceivedCount(pack)}/${storyPackLetters(pack).length}개 사연 수신` : pack.unlockHint}</small>
+          <span class="progress-track" aria-hidden="true"><span style={`width: ${isStoryPackUnlocked(pack) ? Math.round((storyPackReceivedCount(pack) / storyPackLetters(pack).length) * 100) : storyPackProgress(pack)}%`}></span></span>
         </div>
       {/each}
     </div>
@@ -488,9 +609,17 @@
     </div>
 
     <article class="letter-card" aria-live="polite">
-      <p>{selectedStoryPack.title} · {selectedLetter.mood}</p>
+      <p>{selectedStoryPack.title} · {selectedLetter.mood} · {selectedLetter.sequence}</p>
       <h2>{selectedLetter.subject}</h2>
       <span>{selectedLetter.body}</span>
+      <blockquote class="dj-comment">DJ 코멘트: {selectedLetter.djComment}</blockquote>
+      <div class="story-thread" aria-label={`${selectedLetter.author} 연결 사연`}>
+        <strong>연결된 사연 {selectedReceivedCharacterLetters.length}/{selectedCharacterLetters.length}</strong>
+        {#each selectedCharacterLetters as threadLetter (threadLetter.id)}
+          <span class:heard={receivedLetterIds.includes(threadLetter.id)}>{receivedLetterIds.includes(threadLetter.id) ? threadLetter.sequence : "아직 도착하지 않은 후속 사연"}</span>
+        {/each}
+      </div>
+      <p class="pack-progress-copy">{selectedStoryPack.title} 기록 {selectedPackReceivedCount}/{selectedPackLetterCount}</p>
     </article>
   </section>
 </main>
@@ -753,6 +882,38 @@
   .pixel-scene.signal-thin .window span:nth-child(n + 4),
   .pixel-scene.signal-warm .window span:nth-child(5) {
     opacity: 0.28;
+  }
+
+  .rooftop-pot {
+    position: absolute;
+    top: 64px;
+    right: 42px;
+    width: 34px;
+    height: 22px;
+    border: 4px solid #442638;
+    background: #7a4b4f;
+  }
+
+  .rooftop-pot span {
+    position: absolute;
+    bottom: 14px;
+    width: 8px;
+    background: #4f8f80;
+  }
+
+  .rooftop-pot span:nth-child(1) { left: 4px; height: 14px; }
+  .rooftop-pot span:nth-child(2) { left: 13px; height: 22px; }
+  .rooftop-pot span:nth-child(3) { right: 4px; height: 16px; }
+
+  .pixel-scene.rooftop-complete .rooftop-pot span::after {
+    position: absolute;
+    top: -7px;
+    left: 1px;
+    width: 6px;
+    height: 6px;
+    content: "";
+    background: #f9df8f;
+    box-shadow: 0 0 var(--scene-glow) #f1a45f;
   }
 
   .poster {
@@ -1149,12 +1310,14 @@
   .letter-timer,
   .pack-status,
   .unlock-notice,
+  .completion-notice,
   .pack-collection {
     margin-bottom: 0.45rem;
   }
 
   .pack-status,
   .unlock-notice,
+  .completion-notice,
   .pack-card {
     border: 3px solid #4b3149;
     background: #15111d;
@@ -1164,15 +1327,24 @@
     line-height: 1.45;
   }
 
-  .unlock-notice {
+  .unlock-notice,
+  .completion-notice {
     border-color: #f1a45f;
     color: #ffcf91;
     background: #2a1c2f;
   }
 
+  .completion-notice {
+    border-color: #f9df8f;
+    box-shadow: inset 0 0 0 2px #4f8f80;
+  }
+
   .unlock-notice span,
   .unlock-notice strong,
   .unlock-notice small,
+  .completion-notice span,
+  .completion-notice strong,
+  .completion-notice small,
   .pack-card span,
   .pack-card strong,
   .pack-card small {
@@ -1181,6 +1353,11 @@
 
   .pack-card.unlocked {
     border-color: #4f8f80;
+  }
+
+  .pack-card.complete {
+    border-color: #f9df8f;
+    color: #ffcf91;
   }
 
   .pack-card div {
@@ -1240,6 +1417,42 @@
     display: block;
     color: #ead7ad;
     line-height: 1.6;
+  }
+
+  .dj-comment {
+    margin: 0.65rem 0;
+    border-left: 4px solid #f1a45f;
+    padding: 0.45rem 0 0.45rem 0.55rem;
+    color: #ffcf91;
+    background: #20172a;
+    line-height: 1.55;
+  }
+
+  .story-thread {
+    display: grid;
+    gap: 0.28rem;
+    margin: 0.55rem 0;
+    border: 3px solid #4b3149;
+    padding: 0.45rem;
+    background: #20172a;
+  }
+
+  .story-thread strong {
+    color: #f7e9c7;
+    font-size: 0.72rem;
+  }
+
+  .story-thread span {
+    color: #7f6a65;
+    font-size: 0.72rem;
+  }
+
+  .story-thread span.heard {
+    color: #9ed0bc;
+  }
+
+  .pack-progress-copy {
+    margin-bottom: 0;
   }
 
   @keyframes light-breathe {
