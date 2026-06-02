@@ -69,6 +69,19 @@
     sceneClass: string;
   };
 
+  type RoomPlacementSlot = {
+    id: string;
+    title: string;
+    description: string;
+    emptyLabel: string;
+    sceneClass: string;
+  };
+
+  type RoomPlacement = {
+    slotId: RoomPlacementSlot["id"];
+    rewardId: CollectionReward["id"] | null;
+  };
+
   const storyPacks: StoryPack[] = [
     {
       id: "first-night",
@@ -152,6 +165,30 @@
       bonusTitle: "기억 보관함 조명",
       bonusDescription: "세트 완성 시 선반 아래 작은 호박색 조명이 켜지고 다음 보상 목표가 더 선명해집니다.",
       sceneClass: "archive-lamp"
+    }
+  ];
+
+  const roomPlacementSlots: RoomPlacementSlot[] = [
+    {
+      id: "dj-desk",
+      title: "DJ 책상",
+      description: "방송 중 가장 자주 보이는 자리입니다. 배치한 소장품은 새 사연 신호를 조금 더 선명하게 만듭니다.",
+      emptyLabel: "책상 위가 비어 있습니다",
+      sceneClass: "desk-slot"
+    },
+    {
+      id: "memory-shelf",
+      title: "기억 선반",
+      description: "세트 보관함과 맞닿은 자리입니다. 배치한 소장품은 청취자가 머무는 불빛을 늘립니다.",
+      emptyLabel: "선반에 남길 물건을 기다립니다",
+      sceneClass: "shelf-slot"
+    },
+    {
+      id: "window-nook",
+      title: "창가 틈새",
+      description: "도시 야경 옆 작은 전시 공간입니다. 배치한 소장품은 장면 분위기를 가장 먼저 바꿉니다.",
+      emptyLabel: "창가에 아직 전시품이 없습니다",
+      sceneClass: "window-slot"
     }
   ];
 
@@ -293,6 +330,7 @@
   let unlockedRewardIds = $state<CollectionReward["id"][]>([]);
   let currentBandId = $state<FrequencyBand["id"]>(frequencyBands[0].id);
   let unlockedCollectionSetIds = $state<CollectionSet["id"][]>([]);
+  let roomPlacements = $state<RoomPlacement[]>(createDefaultRoomPlacements());
   let unlockedPackNotice = $state<StoryPack | null>(null);
   let completedPackNotice = $state<StoryPack | null>(null);
   let offlineReport = $state<OfflineBroadcastReport | null>(null);
@@ -319,6 +357,11 @@
   const unlockedCollectionSets = $derived(collectionSets.filter((set) => isCollectionSetUnlocked(set)));
   const nextCollectionReward = $derived(collectionRewards.find((reward) => !isRewardUnlocked(reward)));
   const nextCollectionSet = $derived(collectionSets.find((set) => !isCollectionSetUnlocked(set)));
+  const placedRoomRewards = $derived(roomPlacements.map((placement) => collectionRewards.find((reward) => reward.id === placement.rewardId)).filter((reward): reward is CollectionReward => Boolean(reward)));
+  const unplacedUnlockedRewards = $derived(unlockedRewards.filter((reward) => !isRewardPlaced(reward)));
+  const occupiedRoomPlacementCount = $derived(placedRoomRewards.length);
+  const roomPlacementSignalBonus = $derived(Math.min(3, occupiedRoomPlacementCount));
+  const nextUnplacedReward = $derived(unplacedUnlockedRewards[0]);
   const characterIds = $derived(Array.from(new Set(incomingLetters.map((letter) => letter.characterId))));
   const completedCharacterIds = $derived(characterIds.filter((characterId) => characterReceivedCount(characterId) === characterLetters(characterId).length));
   const selectedCharacterLetters = $derived(incomingLetters.filter((letter) => letter.characterId === selectedLetter.characterId));
@@ -343,8 +386,9 @@
   const isRooftopGardenUnlocked = $derived(unlockedStoryPackIds.includes("rooftop-garden"));
   const isRooftopGardenComplete = $derived(completedStoryPackIds.includes("rooftop-garden"));
   const isArchiveLampUnlocked = $derived(unlockedCollectionSetIds.includes("dawn-keepsake-shelf"));
+  const roomPlacementListenerBonus = $derived(occupiedRoomPlacementCount === 0 ? 0 : occupiedRoomPlacementCount + (isArchiveLampUnlocked ? 1 : 0));
   const sceneStatus = $derived(
-    `현재 방송국은 FM ${currentFrequency} ${currentBand.label} 대역에서 ${signalMood === "clear" ? "선명한" : signalMood === "warm" ? "따뜻한" : "희미한"} 신호로 송출 중입니다. 도시 창문 ${listenerLightCount}개가 켜져 있고 안테나는 Lv.${antennaLevel}, 송신기는 Lv.${transmitterLevel}입니다.${isRooftopGardenUnlocked ? " 창가에는 옥상 정원 화분이 놓여 있습니다." : ""}${isRooftopGardenComplete ? " 화분에는 완결된 사연을 닮은 노란 꽃이 피었습니다." : ""}${unlockedRewards.length > 0 ? ` 선반에는 소장품 ${unlockedRewards.length}개가 놓여 있습니다.` : ""}${completedCharacterIds.length > 0 ? ` 벽 앨범에는 완성된 청취자 기록 ${completedCharacterIds.length}개가 꽂혀 있습니다.` : ""}${isArchiveLampUnlocked ? " 선반 아래 기억 보관함 조명이 켜져 있습니다." : ""}`
+    `현재 방송국은 FM ${currentFrequency} ${currentBand.label} 대역에서 ${signalMood === "clear" ? "선명한" : signalMood === "warm" ? "따뜻한" : "희미한"} 신호로 송출 중입니다. 도시 창문 ${listenerLightCount}개가 켜져 있고 안테나는 Lv.${antennaLevel}, 송신기는 Lv.${transmitterLevel}입니다.${isRooftopGardenUnlocked ? " 창가에는 옥상 정원 화분이 놓여 있습니다." : ""}${isRooftopGardenComplete ? " 화분에는 완결된 사연을 닮은 노란 꽃이 피었습니다." : ""}${unlockedRewards.length > 0 ? ` 선반에는 소장품 ${unlockedRewards.length}개가 놓여 있습니다.` : ""}${occupiedRoomPlacementCount > 0 ? ` 방송국 구역 ${occupiedRoomPlacementCount}곳에 소장품이 배치되어 새 사연 신호 +${roomPlacementSignalBonus}, 청취자 +${roomPlacementListenerBonus} 보너스를 줍니다.` : ""}${completedCharacterIds.length > 0 ? ` 벽 앨범에는 완성된 청취자 기록 ${completedCharacterIds.length}개가 꽂혀 있습니다.` : ""}${isArchiveLampUnlocked ? " 선반 아래 기억 보관함 조명이 켜져 있습니다." : ""}`
   );
 
   function savedNumber(value: unknown, fallback: number) {
@@ -357,6 +401,25 @@
 
   function normalizeBandId(value: unknown) {
     return typeof value === "string" && frequencyBands.some((band) => band.id === value) ? value : frequencyBands[0].id;
+  }
+
+  function createDefaultRoomPlacements() {
+    return roomPlacementSlots.map((slot) => ({ slotId: slot.id, rewardId: null }));
+  }
+
+  function normalizeRoomPlacements(value: unknown) {
+    const savedPlacements = Array.isArray(value) ? value : [];
+    const usedRewardIds = new Set<CollectionReward["id"]>();
+
+    return roomPlacementSlots.map((slot) => {
+      const savedPlacement = savedPlacements.find((placement) => placement?.slotId === slot.id);
+      const rewardId = savedPlacement?.rewardId;
+      const isValidReward = typeof rewardId === "string" && unlockedRewardIds.includes(rewardId) && !usedRewardIds.has(rewardId);
+      if (!isValidReward) return { slotId: slot.id, rewardId: null };
+
+      usedRewardIds.add(rewardId);
+      return { slotId: slot.id, rewardId };
+    });
   }
 
   function frequencyBandScore(letter: Letter, band = currentBand) {
@@ -505,8 +568,8 @@
     return {
       durationLabel: formatOfflineDuration(elapsedMinutes),
       elapsedMinutes,
-      listeners: Math.max(1, Math.floor(elapsedMinutes / 4) + transmitterLevel),
-      signal: Math.min(18, Math.max(1, Math.floor(elapsedMinutes / 12) + antennaLevel)),
+      listeners: Math.max(1, Math.floor(elapsedMinutes / 4) + transmitterLevel + roomPlacementListenerBonus),
+      signal: Math.min(18, Math.max(1, Math.floor(elapsedMinutes / 12) + antennaLevel + roomPlacementSignalBonus)),
       reputation: Math.max(1, Math.floor(elapsedMinutes / 45)),
       stories: Math.max(1, Math.floor(elapsedMinutes / 60)),
       letters: queuedLetters
@@ -546,6 +609,35 @@
 
   function isRewardUnlocked(reward: CollectionReward) {
     return unlockedRewardIds.includes(reward.id);
+  }
+
+  function roomPlacementSlotReward(slot: RoomPlacementSlot) {
+    const placement = roomPlacements.find((roomPlacement) => roomPlacement.slotId === slot.id);
+    return collectionRewards.find((reward) => reward.id === placement?.rewardId) ?? null;
+  }
+
+  function isRewardPlaced(reward: CollectionReward) {
+    return roomPlacements.some((placement) => placement.rewardId === reward.id);
+  }
+
+  function placeReward(slot: RoomPlacementSlot, reward: CollectionReward) {
+    if (!isRewardUnlocked(reward)) return;
+
+    roomPlacements = roomPlacements.map((placement) => ({
+      slotId: placement.slotId,
+      rewardId: placement.slotId === slot.id ? reward.id : placement.rewardId === reward.id ? null : placement.rewardId
+    }));
+    stationLog = `${reward.title} 소장품을 ${slot.title}에 배치했습니다. 방송국 장면이 조금 더 채워졌습니다.`;
+    saveStationState();
+  }
+
+  function clearRoomPlacement(slot: RoomPlacementSlot) {
+    const reward = roomPlacementSlotReward(slot);
+    if (!reward) return;
+
+    roomPlacements = roomPlacements.map((placement) => (placement.slotId === slot.id ? { slotId: placement.slotId, rewardId: null } : placement));
+    stationLog = `${slot.title}에서 ${reward.title} 소장품을 잠시 치웠습니다.`;
+    saveStationState();
   }
 
   function rewardProgress(reward: CollectionReward) {
@@ -640,6 +732,7 @@
         unlockedRewardIds,
         currentBandId,
         unlockedCollectionSetIds,
+        roomPlacements,
         letters,
         offlineReport,
         lastSavedAt: Date.now()
@@ -655,8 +748,8 @@
     selectedLetter = next;
     reputation += 1;
     stories += 1;
-    signal = Math.min(100, signal + 4 + antennaLevel);
-    listeners += 2 + transmitterLevel;
+    signal = Math.min(100, signal + 4 + antennaLevel + roomPlacementSignalBonus);
+    listeners += 2 + transmitterLevel + roomPlacementListenerBonus;
     stationLog = `FM ${currentFrequency} ${currentBand.label} 대역에서 ${next.author}의 사연이 도착했습니다. DJ 코멘트: ${next.djComment}`;
   }
 
@@ -692,6 +785,7 @@
     unlockedRewardIds = [];
     currentBandId = frequencyBands[0].id;
     unlockedCollectionSetIds = [];
+    roomPlacements = createDefaultRoomPlacements();
     unlockedPackNotice = null;
     completedPackNotice = null;
     offlineReport = null;
@@ -741,6 +835,7 @@
           unlockedCollectionSetIds = Array.isArray(state.unlockedCollectionSetIds)
             ? Array.from(new Set([...state.unlockedCollectionSetIds.filter((id: string) => collectionSets.some((set) => set.id === id)), ...earnedCollectionSetIds]))
             : earnedCollectionSetIds;
+          roomPlacements = normalizeRoomPlacements(state.roomPlacements);
           selectedLetter = letters[0] ?? incomingLetters[0];
 
           const lastSavedAt = savedNumber(state.lastSavedAt, Date.now());
@@ -773,7 +868,7 @@
 
 <main class="station-shell" style={`--band-accent: ${currentBand.accent};`} aria-label="Night Radio Station">
   <section
-    class={`pixel-scene signal-${signalMood} ${currentBand.sceneClass}${isRooftopGardenUnlocked ? " has-rooftop" : ""}${isRooftopGardenComplete ? " rooftop-complete" : ""}${isArchiveLampUnlocked ? " has-archive-lamp" : ""}`}
+    class={`pixel-scene signal-${signalMood} ${currentBand.sceneClass}${isRooftopGardenUnlocked ? " has-rooftop" : ""}${isRooftopGardenComplete ? " rooftop-complete" : ""}${isArchiveLampUnlocked ? " has-archive-lamp" : ""}${occupiedRoomPlacementCount > 0 ? " has-placements" : ""}`}
     style={`--signal-pulse: ${scenePulse}; --scene-glow: ${sceneGlow}; --light-opacity: ${lightOpacity}; --antenna-reach: ${antennaReach}px; --listener-lights: ${listenerLightCount}; --band-accent: ${currentBand.accent};`}
     aria-labelledby="station-title"
     aria-describedby="scene-status"
@@ -811,6 +906,13 @@
           <span class:active={characterReceivedCount(characterId) > 0} class:complete={completedCharacterIds.includes(characterId)}></span>
         {/each}
       </div>
+      {#if completedCharacterIds.length > 0}
+        <div class="visitor-notes" aria-hidden="true">
+          {#each completedCharacterIds.slice(0, 3) as characterId (characterId)}
+            <span></span>
+          {/each}
+        </div>
+      {/if}
       <div class="shelf" aria-hidden="true">
         {#if unlockedRewards.length === 0}
           <span class="souvenir placeholder"></span><span class="souvenir placeholder"></span><span class="souvenir placeholder"></span>
@@ -819,6 +921,15 @@
             <span class={`souvenir ${reward.souvenirClass}`}></span>
           {/each}
         {/if}
+      </div>
+      <div class="placement-stage" aria-hidden="true">
+        {#each roomPlacementSlots as slot (slot.id)}
+          <div class={`room-keepsake ${slot.sceneClass}`} class:filled={Boolean(roomPlacementSlotReward(slot))}>
+            {#if roomPlacementSlotReward(slot)}
+              <span class={`souvenir ${roomPlacementSlotReward(slot)?.souvenirClass}`}></span>
+            {/if}
+          </div>
+        {/each}
       </div>
       <div class="host" role="img" aria-label="심야 DJ 캐릭터">
         <div class="host-head"></div>
@@ -1018,6 +1129,58 @@
         <small>현재 준비된 모든 소장품과 세트 보상이 방송국에 놓였습니다.</small>
       {/if}
     </div>
+
+    <section class="placement-panel" aria-labelledby="placement-title">
+      <div class="placement-header">
+        <div>
+          <p class="eyebrow">broadcast room layout</p>
+          <h2 id="placement-title">방송국 소장품 배치</h2>
+        </div>
+        <strong>{occupiedRoomPlacementCount}/{roomPlacementSlots.length}</strong>
+      </div>
+      <p>
+        배치 보너스: 새 사연 신호 +{roomPlacementSignalBonus}, 청취자 +{roomPlacementListenerBonus}
+        {#if nextUnplacedReward}
+          · 다음 배치 후보: {nextUnplacedReward.title}
+        {:else if unlockedRewards.length === 0}
+          · 사연 묶음 완성 후 소장품을 배치할 수 있습니다.
+        {:else}
+          · 해금된 소장품이 모두 방송국에 놓였습니다.
+        {/if}
+      </p>
+      <div class="placement-grid" role="list" aria-label="소장품 배치 슬롯">
+        {#each roomPlacementSlots as slot (slot.id)}
+          <div class:filled={Boolean(roomPlacementSlotReward(slot))} class="placement-card" role="listitem">
+            <div>
+              <span>{slot.title}</span>
+              <strong>{roomPlacementSlotReward(slot)?.title ?? slot.emptyLabel}</strong>
+            </div>
+            <p>{roomPlacementSlotReward(slot)?.description ?? slot.description}</p>
+            <div class="placement-actions" aria-label={`${slot.title} 소장품 선택`}>
+              {#if unlockedRewards.length === 0}
+                <small>아직 배치 가능한 소장품이 없습니다.</small>
+              {:else}
+                {#each unlockedRewards as reward (reward.id)}
+                  <button
+                    type="button"
+                    class:active={roomPlacementSlotReward(slot)?.id === reward.id}
+                    aria-pressed={roomPlacementSlotReward(slot)?.id === reward.id}
+                    disabled={roomPlacementSlotReward(slot)?.id === reward.id}
+                    onclick={() => placeReward(slot, reward)}
+                  >
+                    <span>{isRewardPlaced(reward) ? "이동" : "배치"}</span>
+                    {reward.title}
+                  </button>
+                {/each}
+                {#if roomPlacementSlotReward(slot)}
+                  <button type="button" class="clear-placement" onclick={() => clearRoomPlacement(slot)}>비우기</button>
+                {/if}
+              {/if}
+            </div>
+          </div>
+        {/each}
+      </div>
+    </section>
 
     <div class="set-gallery" role="list" aria-label="소장품 세트 도감">
       {#each collectionSets as set (set.id)}
@@ -1489,6 +1652,30 @@
     box-shadow: 0 0 10px rgba(249, 223, 143, 0.8);
   }
 
+  .visitor-notes {
+    display: flex;
+    position: absolute;
+    top: 154px;
+    left: 28px;
+    gap: 4px;
+  }
+
+  .visitor-notes span {
+    width: 12px;
+    height: 14px;
+    border: 2px solid #442638;
+    background: #f7e9c7;
+    box-shadow: 0 3px 0 #6b3f55;
+  }
+
+  .visitor-notes span:nth-child(2) {
+    background: #9ed0bc;
+  }
+
+  .visitor-notes span:nth-child(3) {
+    background: #ffcf91;
+  }
+
   .shelf {
     position: absolute;
     top: 84px;
@@ -1557,6 +1744,63 @@
     content: "";
     background: #f9df8f;
     box-shadow: 0 0 var(--scene-glow) #f1a45f;
+  }
+
+  .placement-stage {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .room-keepsake {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(75, 49, 73, 0.72);
+    background: rgba(21, 17, 29, 0.48);
+  }
+
+  .room-keepsake.filled {
+    border-color: #f9df8f;
+    background: rgba(249, 223, 143, 0.1);
+    box-shadow: 0 0 12px rgba(249, 223, 143, 0.36);
+  }
+
+  .room-keepsake .souvenir {
+    position: absolute;
+    bottom: 2px;
+    left: 4px;
+    margin: 0;
+    transform: none;
+  }
+
+  .room-keepsake .souvenir.ticket {
+    bottom: 8px;
+    left: 2px;
+  }
+
+  .room-keepsake .souvenir.flower {
+    bottom: 2px;
+    left: 7px;
+  }
+
+  .room-keepsake.desk-slot {
+    right: 162px;
+    bottom: 50px;
+  }
+
+  .room-keepsake.shelf-slot {
+    top: 102px;
+    right: 72px;
+  }
+
+  .room-keepsake.window-slot {
+    top: 72px;
+    right: 126px;
+  }
+
+  .pixel-scene.has-placements .studio-room {
+    box-shadow: inset 0 0 0 3px rgba(249, 223, 143, 0.08);
   }
 
   .host {
@@ -1947,6 +2191,8 @@
   .letter-list,
   .pack-status,
   .pack-collection,
+  .placement-grid,
+  .placement-actions,
   .set-gallery,
   .reward-gallery,
   .character-gallery {
@@ -1956,6 +2202,7 @@
 
   .actions button,
   .offline-actions button,
+  .placement-actions button,
   .letter-list button,
   .reset-button {
     border: 3px solid #6b3f55;
@@ -1990,6 +2237,7 @@
   .reward-notice,
   .set-notice,
   .collection-summary,
+  .placement-panel,
   .set-gallery,
   .reward-gallery,
   .character-gallery,
@@ -2004,6 +2252,8 @@
   .reward-notice,
   .set-notice,
   .collection-summary,
+  .placement-panel,
+  .placement-card,
   .pack-card,
   .set-card,
   .reward-card,
@@ -2102,6 +2352,8 @@
   }
 
   .collection-summary div,
+  .placement-header,
+  .placement-card > div,
   .pack-card div,
   .set-card div,
   .reward-card div,
@@ -2110,6 +2362,65 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.45rem;
+  }
+
+  .placement-panel {
+    background:
+      linear-gradient(90deg, rgba(79, 143, 128, 0.12), transparent 62%),
+      #15111d;
+  }
+
+  .placement-header h2 {
+    margin-bottom: 0;
+  }
+
+  .placement-header strong,
+  .placement-card.filled strong {
+    color: #ffcf91;
+  }
+
+  .placement-panel > p,
+  .placement-card p {
+    margin: 0.3rem 0 0.45rem;
+  }
+
+  .placement-card.filled {
+    border-color: #f9df8f;
+    box-shadow: inset 0 0 0 2px rgba(79, 143, 128, 0.45);
+  }
+
+  .placement-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .placement-actions button {
+    padding: 0.4rem;
+    font-size: 0.68rem;
+  }
+
+  .placement-actions button.active {
+    border-color: #f9df8f;
+    color: #ffcf91;
+    background: #3a263f;
+  }
+
+  .placement-actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.68;
+  }
+
+  .placement-actions span,
+  .placement-actions small {
+    display: block;
+  }
+
+  .placement-actions span {
+    color: #9ed0bc;
+    font-size: 0.62rem;
+  }
+
+  .clear-placement {
+    color: #c7a77b;
   }
 
   .collection-summary strong {
@@ -2154,6 +2465,7 @@
 
   .actions button:hover:not(:disabled),
   .offline-actions button:hover,
+  .placement-actions button:hover:not(:disabled),
   .frequency-options button:hover,
   .letter-list button:hover,
   .letter-list button.active,
