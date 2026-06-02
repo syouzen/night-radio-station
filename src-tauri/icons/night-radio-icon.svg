@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc" shape-rendering="crispEdges">
+  <title id="title">Night Radio Station app icon</title>
+  <desc id="desc">Pixel art vintage FM radio glowing under a midnight moon.</desc>
+  <rect width="512" height="512" rx="96" fill="#15111d"/>
+  <rect x="48" y="48" width="416" height="416" rx="72" fill="#21172a"/>
+  <path d="M96 96h320v48H96z" fill="#4b3149"/>
+  <path d="M128 64h48v32h-48zM336 64h48v32h-48z" fill="#f9df8f"/>
+  <path d="M128 144h256v32H128z" fill="#8a5572"/>
+  <path d="M112 176h288v176H112z" fill="#f1a45f"/>
+  <path d="M144 208h224v112H144z" fill="#2f2135"/>
+  <path d="M160 224h80v80h-80z" fill="#15111d"/>
+  <path d="M176 240h48v48h-48z" fill="#9ed0bc"/>
+  <path d="M272 224h64v16h-64zM272 256h80v16h-80zM272 288h56v16h-56z" fill="#f9df8f"/>
+  <path d="M128 352h256v48H128z" fill="#6b3f55"/>
+  <path d="M160 368h32v16h-32zM216 368h80v16h-80zM320 368h32v16h-32z" fill="#ffcf91"/>
+  <path d="M120 184h16v160h-16zM376 184h16v160h-16z" fill="#c77855"/>
+  <path d="M96 400h320v32H96z" fill="#442638"/>
+  <path d="M152 432h48v32h-48zM312 432h48v32h-48z" fill="#33203a"/>
+  <path d="M376 112h24v24h-24zM400 88h24v24h-24z" fill="#f9df8f"/>
+  <path d="M72 248h24v16H72zM416 248h24v16h-24zM80 216h16v16H80zM416 216h16v16h-16zM80 280h16v16H80zM416 280h16v16h-16z" fill="#b99cff" opacity="0.9"/>
+  <path d="M200 112h112v16H200zM184 96h144v16H184z" fill="#9ed0bc" opacity="0.75"/>
+  <path d="M208 152h96v8h-96z" fill="#f7e9c7" opacity="0.8"/>
+</svg>
