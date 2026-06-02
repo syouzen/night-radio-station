@@ -455,12 +455,22 @@
   const isRooftopGardenUnlocked = $derived(unlockedStoryPackIds.includes("rooftop-garden"));
   const isRooftopGardenComplete = $derived(completedStoryPackIds.includes("rooftop-garden"));
   const isArchiveLampUnlocked = $derived(unlockedCollectionSetIds.includes("dawn-keepsake-shelf"));
+  const cityActivityLevel = $derived(listeners >= 48 ? 3 : listeners >= 24 ? 2 : listeners >= 10 ? 1 : 0);
+  const hasOfflineMail = $derived(Boolean(offlineReport && offlineReport.letters.length > 0));
+  const activeCharacterEcho = $derived(selectedLetter.characterId);
+  const sceneMilestoneText = $derived(
+    completedStoryPacks.length > 0
+      ? `${completedStoryPacks[completedStoryPacks.length - 1].title} 완성`
+      : unlockedStoryPacks.length > 1
+        ? `${unlockedStoryPacks[unlockedStoryPacks.length - 1].title} 수신 중`
+        : `${currentBand.label} 대역 수신 중`
+  );
   const roomPlacementListenerBonus = $derived(occupiedRoomPlacementCount === 0 ? 0 : occupiedRoomPlacementCount + (isArchiveLampUnlocked ? 1 : 0));
   const totalRoomSignalBonus = $derived(roomPlacementSignalBonus + roomSynergySignalBonus);
   const totalRoomListenerBonus = $derived(roomPlacementListenerBonus + roomVisitorListenerBonus);
   const currentRoomAmbience = $derived(roomAmbiences[activeKeepsakeSynergies.length > 0 && activeVisitorTraces.length > 0 ? 2 : occupiedRoomPlacementCount > 0 || activeVisitorTraces.length > 0 ? 1 : 0]);
   const sceneStatus = $derived(
-    `현재 방송국은 FM ${currentFrequency} ${currentBand.label} 대역에서 ${signalMood === "clear" ? "선명한" : signalMood === "warm" ? "따뜻한" : "희미한"} 신호로 송출 중입니다. 도시 창문 ${listenerLightCount}개가 켜져 있고 안테나는 Lv.${antennaLevel}, 송신기는 Lv.${transmitterLevel}입니다.${isRooftopGardenUnlocked ? " 창가에는 옥상 정원 화분이 놓여 있습니다." : ""}${isRooftopGardenComplete ? " 화분에는 완결된 사연을 닮은 노란 꽃이 피었습니다." : ""}${unlockedRewards.length > 0 ? ` 선반에는 소장품 ${unlockedRewards.length}개가 놓여 있습니다.` : ""}${currentRoomAmbience ? ` 방 분위기는 ${currentRoomAmbience.label}입니다.` : ""}${occupiedRoomPlacementCount > 0 ? ` 방송국 구역 ${occupiedRoomPlacementCount}곳에 소장품이 배치되어 새 사연 신호 +${totalRoomSignalBonus}, 청취자 +${totalRoomListenerBonus} 보너스를 줍니다.` : ""}${activeKeepsakeSynergies.length > 0 ? ` 소장품 동조 효과 ${activeKeepsakeSynergies.length}개가 켜져 있습니다.` : ""}${activeVisitorTraces.length > 0 ? ` 청취자 방문 흔적 ${activeVisitorTraces.length}개가 남아 있습니다.` : ""}${completedCharacterIds.length > 0 ? ` 벽 앨범에는 완성된 청취자 기록 ${completedCharacterIds.length}개가 꽂혀 있습니다.` : ""}${isArchiveLampUnlocked ? " 선반 아래 기억 보관함 조명이 켜져 있습니다." : ""}`
+    `현재 방송국은 FM ${currentFrequency} ${currentBand.label} 대역에서 ${signalMood === "clear" ? "선명한" : signalMood === "warm" ? "따뜻한" : "희미한"} 신호로 송출 중입니다. 도시 창문 ${listenerLightCount}개가 켜져 있고 도시 활동 단계는 ${cityActivityLevel}입니다. 안테나는 Lv.${antennaLevel}, 송신기는 Lv.${transmitterLevel}입니다.${hasOfflineMail ? " 책상 위에는 밤샘 방송 리포트 사연 더미가 쌓여 있습니다." : ""}${isRooftopGardenUnlocked ? " 창가에는 옥상 정원 화분이 놓여 있습니다." : ""}${isRooftopGardenComplete ? " 화분에는 완결된 사연을 닮은 노란 꽃이 피었습니다." : ""}${unlockedRewards.length > 0 ? ` 선반에는 소장품 ${unlockedRewards.length}개가 놓여 있습니다.` : ""}${currentRoomAmbience ? ` 방 분위기는 ${currentRoomAmbience.label}입니다.` : ""}${occupiedRoomPlacementCount > 0 ? ` 방송국 구역 ${occupiedRoomPlacementCount}곳에 소장품이 배치되어 새 사연 신호 +${totalRoomSignalBonus}, 청취자 +${totalRoomListenerBonus} 보너스를 줍니다.` : ""}${activeKeepsakeSynergies.length > 0 ? ` 소장품 동조 효과 ${activeKeepsakeSynergies.length}개가 켜져 있습니다.` : ""}${activeVisitorTraces.length > 0 ? ` 청취자 방문 흔적 ${activeVisitorTraces.length}개가 남아 있습니다.` : ""}${completedCharacterIds.length > 0 ? ` 벽 앨범에는 완성된 청취자 기록 ${completedCharacterIds.length}개가 꽂혀 있습니다.` : ""}${isArchiveLampUnlocked ? " 선반 아래 기억 보관함 조명이 켜져 있습니다." : ""}`
   );
 
   function savedNumber(value: unknown, fallback: number) {
@@ -940,7 +950,7 @@
 
 <main class="station-shell" style={`--band-accent: ${currentBand.accent};`} aria-label="Night Radio Station">
   <section
-    class={`pixel-scene signal-${signalMood} ${currentBand.sceneClass} ${currentRoomAmbience.sceneClass}${isRooftopGardenUnlocked ? " has-rooftop" : ""}${isRooftopGardenComplete ? " rooftop-complete" : ""}${isArchiveLampUnlocked ? " has-archive-lamp" : ""}${occupiedRoomPlacementCount > 0 ? " has-placements" : ""}${activeKeepsakeSynergies.length > 0 ? " has-synergy" : ""}${activeVisitorTraces.length > 0 ? " has-visitor-traces" : ""}`}
+    class={`pixel-scene signal-${signalMood} ${currentBand.sceneClass} ${currentRoomAmbience.sceneClass} city-level-${cityActivityLevel} echo-${activeCharacterEcho}${hasOfflineMail ? " has-offline-mail" : ""}${isRooftopGardenUnlocked ? " has-rooftop" : ""}${isRooftopGardenComplete ? " rooftop-complete" : ""}${isArchiveLampUnlocked ? " has-archive-lamp" : ""}${occupiedRoomPlacementCount > 0 ? " has-placements" : ""}${activeKeepsakeSynergies.length > 0 ? " has-synergy" : ""}${activeVisitorTraces.length > 0 ? " has-visitor-traces" : ""}`}
     style={`--signal-pulse: ${scenePulse}; --scene-glow: ${sceneGlow}; --light-opacity: ${lightOpacity}; --antenna-reach: ${antennaReach}px; --listener-lights: ${listenerLightCount}; --band-accent: ${currentBand.accent};`}
     aria-labelledby="station-title"
     aria-describedby="scene-status"
@@ -956,6 +966,10 @@
         <span style={`left: ${8 + index * 46}px; height: ${10 + (index % 3) * 8}px;`}></span>
       {/each}
     </div>
+    <div class="city-activity" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    <div class="ambient-trail" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class={`character-echo ${activeCharacterEcho}`} aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="scene-milestone" aria-hidden="true">{sceneMilestoneText}</div>
     <div class="signal-rings" aria-hidden="true">
       <span></span><span></span><span></span>
     </div>
@@ -1022,6 +1036,9 @@
         <span class="letter-flag"></span>
       </button>
       <div class="desk" aria-hidden="true"><span></span><span></span><span></span></div>
+      {#if hasOfflineMail}
+        <div class="offline-mail-stack" aria-hidden="true"><span></span><span></span><span></span></div>
+      {/if}
     </div>
   </section>
 
@@ -1563,6 +1580,124 @@
     background: var(--band-accent);
     box-shadow: 0 0 var(--scene-glow) var(--band-accent);
     opacity: var(--light-opacity);
+  }
+
+  .city-activity {
+    position: absolute;
+    right: 16px;
+    bottom: 198px;
+    left: 20px;
+    height: 18px;
+    pointer-events: none;
+  }
+
+  .city-activity span {
+    position: absolute;
+    bottom: 0;
+    width: 16px;
+    height: 4px;
+    background: #27365b;
+    opacity: 0.28;
+  }
+
+  .city-activity span:nth-child(1) { left: 18px; }
+  .city-activity span:nth-child(2) { left: 92px; }
+  .city-activity span:nth-child(3) { right: 96px; }
+  .city-activity span:nth-child(4) { right: 20px; }
+
+  .pixel-scene.city-level-1 .city-activity span:nth-child(-n + 1),
+  .pixel-scene.city-level-2 .city-activity span:nth-child(-n + 3),
+  .pixel-scene.city-level-3 .city-activity span {
+    height: 10px;
+    background: var(--band-accent);
+    box-shadow: 0 0 12px var(--band-accent);
+    opacity: 0.86;
+  }
+
+  .ambient-trail {
+    position: absolute;
+    right: 18px;
+    bottom: 184px;
+    left: 18px;
+    height: 34px;
+    pointer-events: none;
+  }
+
+  .ambient-trail span {
+    position: absolute;
+    height: 4px;
+    background: var(--band-accent);
+    opacity: 0.42;
+    animation: ambient-sweep 4.4s steps(4, end) infinite;
+  }
+
+  .ambient-trail span:nth-child(1) { top: 4px; left: 8px; width: 34px; }
+  .ambient-trail span:nth-child(2) { top: 15px; right: 46px; width: 46px; animation-delay: 0.8s; }
+  .ambient-trail span:nth-child(3) { top: 26px; left: 120px; width: 28px; animation-delay: 1.6s; }
+
+  .pixel-scene.band-rooftop .ambient-trail span {
+    width: 4px;
+    height: 14px;
+    animation-name: rain-fall;
+  }
+
+  .pixel-scene.band-hidden-city .ambient-trail span {
+    height: 8px;
+    animation-name: hidden-flicker;
+  }
+
+  .character-echo {
+    position: absolute;
+    left: 26px;
+    bottom: 196px;
+    width: 54px;
+    height: 30px;
+    pointer-events: none;
+  }
+
+  .character-echo span {
+    position: absolute;
+    bottom: 0;
+    background: var(--band-accent);
+    opacity: 0.36;
+  }
+
+  .character-echo span:nth-child(1) { left: 4px; width: 28px; height: 8px; }
+  .character-echo span:nth-child(2) { left: 28px; width: 12px; height: 14px; }
+  .character-echo span:nth-child(3) { right: 0; width: 8px; height: 8px; }
+
+  .character-echo.gardener-haerin span:nth-child(1),
+  .character-echo.rooftop-dalsoo span:nth-child(1),
+  .character-echo.sleepless-yeon span:nth-child(1) {
+    width: 18px;
+    height: 14px;
+    background: #4f8f80;
+  }
+
+  .character-echo.hidden-city-listener span,
+  .character-echo.repair-seoho span {
+    background: #b99cff;
+    opacity: 0.55;
+  }
+
+  .character-echo.bridge-sora span:nth-child(3),
+  .character-echo.taxi-minu span:nth-child(3) {
+    background: #ff6b4a;
+    opacity: 0.8;
+  }
+
+  .scene-milestone {
+    position: absolute;
+    top: 86px;
+    left: 18px;
+    max-width: 148px;
+    border: 3px solid #442638;
+    background: #15111d;
+    color: var(--band-accent);
+    padding: 0.25rem;
+    font-size: 0.62rem;
+    line-height: 1.2;
+    pointer-events: none;
   }
 
   .signal-rings {
@@ -2147,6 +2282,28 @@
   .desk span:nth-child(1) { left: 14px; }
   .desk span:nth-child(2) { left: 48px; background: #f1a45f; }
   .desk span:nth-child(3) { right: 16px; }
+
+  .offline-mail-stack {
+    position: absolute;
+    right: 74px;
+    bottom: 54px;
+    width: 42px;
+    height: 34px;
+    animation: mail-stack-glow 2.2s steps(2, end) infinite;
+  }
+
+  .offline-mail-stack span {
+    position: absolute;
+    right: 0;
+    width: 30px;
+    height: 10px;
+    border: 3px solid #442638;
+    background: #f7e9c7;
+  }
+
+  .offline-mail-stack span:nth-child(1) { bottom: 0; }
+  .offline-mail-stack span:nth-child(2) { right: 6px; bottom: 9px; background: #ffcf91; }
+  .offline-mail-stack span:nth-child(3) { right: 12px; bottom: 18px; background: var(--band-accent); }
 
   .status-panel,
   .letter-panel {
@@ -2797,12 +2954,36 @@
     50% { opacity: 1; }
   }
 
+  @keyframes ambient-sweep {
+    0%, 100% { transform: translateX(0); opacity: 0.18; }
+    50% { transform: translateX(10px); opacity: 0.68; }
+  }
+
+  @keyframes rain-fall {
+    0%, 100% { transform: translateY(-4px); opacity: 0.22; }
+    50% { transform: translateY(8px); opacity: 0.72; }
+  }
+
+  @keyframes hidden-flicker {
+    0%, 100% { opacity: 0.18; }
+    25% { opacity: 0.74; }
+    50% { opacity: 0.28; }
+    75% { opacity: 0.92; }
+  }
+
+  @keyframes mail-stack-glow {
+    0%, 100% { filter: brightness(0.8); }
+    50% { filter: brightness(1.25); }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .wall-light,
     .signal-rings span,
     .host,
+    .ambient-trail span,
     .radio-wave,
     .letter-flag,
+    .offline-mail-stack,
     .synergy-glow,
     .on-air span {
       animation: none;
